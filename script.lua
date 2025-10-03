@@ -178,13 +178,16 @@ local function CreateGUI()
     SideCorner.CornerRadius = UDim.new(0, 12)
     SideCorner.Parent = SidePanel
 
-    -- Контент панель
-    local ContentPanel = Instance.new("Frame")
+    -- Контент панель с скроллом
+    local ContentPanel = Instance.new("ScrollingFrame")
     ContentPanel.Size = UDim2.new(0, 450, 0, 360)
     ContentPanel.Position = UDim2.new(0, 150, 0, 40)
     ContentPanel.BackgroundColor3 = Color3.new(0.18, 0.18, 0.18)
     ContentPanel.BorderSizePixel = 0
-    ContentPanel.ClipsDescendants = true
+    ContentPanel.ScrollBarThickness = 8
+    ContentPanel.ScrollBarImageColor3 = Color3.new(0.3, 0.3, 0.3)
+    ContentPanel.VerticalScrollBarInset = Enum.ScrollBarInset.Always
+    ContentPanel.CanvasSize = UDim2.new(0, 0, 0, 500)
     ContentPanel.Parent = MainFrame
 
     local ContentCorner = Instance.new("UICorner")
@@ -237,197 +240,406 @@ local function CreateGUI()
     end)
 
     -- Кнопки разделов
-    local Sections = {"Main", "Visual", "Brainrot", "Info"}
+    local Sections = {"Main", "Visual", "Brainrot", "ESP", "Info"}
     local SectionButtons = {}
 
-    local function CreateSectionButton(name, position)
-        local Button = Instance.new("TextButton")
-        Button.Size = UDim2.new(0, 140, 0, 35)
-        Button.Position = UDim2.new(0, 5, 0, position)
-        Button.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
-        Button.Text = name
-        Button.TextColor3 = Color3.new(1, 1, 1)
-        Button.TextSize = 14
-        Button.Font = Enum.Font.Gotham
-        Button.Parent = SidePanel
-
-        local ButtonCorner = Instance.new("UICorner")
-        ButtonCorner.CornerRadius = UDim.new(0, 8)
-        ButtonCorner.Parent = Button
-
-        SectionButtons[name] = Button
-
-        Button.MouseButton1Click:Connect(function()
-            CurrentSection = name
-            UpdateContent()
-            
-            -- Обновление цвета активной кнопки
-            for sectionName, btn in pairs(SectionButtons) do
-                if sectionName == name then
-                    btn.BackgroundColor3 = Color3.new(0, 0.5, 1)
-                else
-                    btn.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
-                end
-            end
-        end)
-
-        return Button
-    end
-
-    -- Создание кнопок разделов
-    for i, section in ipairs(Sections) do
-        CreateSectionButton(section, 10 + (i-1)*45)
-    end
-
-    -- Функции для контента
-    local function CreateToggle(name, position, callback)
-        local ToggleFrame = Instance.new("Frame")
-        ToggleFrame.Size = UDim2.new(0, 200, 0, 30)
-        ToggleFrame.Position = UDim2.new(0, 20, 0, position)
-        ToggleFrame.BackgroundTransparency = 1
-        ToggleFrame.Parent = ContentPanel
-
-        local ToggleButton = Instance.new("TextButton")
-        ToggleButton.Size = UDim2.new(0, 30, 0, 30)
-        ToggleButton.Position = UDim2.new(0, 0, 0, 0)
-        ToggleButton.BackgroundColor3 = Color3.new(0.3, 0.3, 0.3)
-        ToggleButton.Text = ""
-        ToggleButton.Parent = ToggleFrame
-
-        local ToggleCorner = Instance.new("UICorner")
-        ToggleCorner.CornerRadius = UDim.new(0, 6)
-        ToggleCorner.Parent = ToggleButton
-
-        local ToggleLabel = Instance.new("TextLabel")
-        ToggleLabel.Size = UDim2.new(0, 160, 0, 30)
-        ToggleLabel.Position = UDim2.new(0, 40, 0, 0)
-        ToggleLabel.BackgroundTransparency = 1
-        ToggleLabel.Text = name
-        ToggleLabel.TextColor3 = Color3.new(1, 1, 1)
-        ToggleLabel.TextSize = 14
-        ToggleLabel.TextXAlignment = Enum.TextXAlignment.Left
-        ToggleLabel.Font = Enum.Font.Gotham
-        ToggleLabel.Parent = ToggleFrame
-
-        local isToggled = false
-
-        ToggleButton.MouseButton1Click:Connect(function()
-            isToggled = not isToggled
-            if isToggled then
-                ToggleButton.BackgroundColor3 = Color3.new(0, 0.5, 1)
-            else
-                ToggleButton.BackgroundColor3 = Color3.new(0.3, 0.3, 0.3)
-            end
-            if callback then
-                callback(isToggled)
-            end
-        end)
-
-        return ToggleFrame
-    end
-
-    local function CreateSlider(name, position, min, max, default, callback)
-        local SliderFrame = Instance.new("Frame")
-        SliderFrame.Size = UDim2.new(0, 200, 0, 50)
-        SliderFrame.Position = UDim2.new(0, 20, 0, position)
-        SliderFrame.BackgroundTransparency = 1
-        SliderFrame.Parent = ContentPanel
-
-        local SliderLabel = Instance.new("TextLabel")
-        SliderLabel.Size = UDim2.new(1, 0, 0, 20)
-        SliderLabel.BackgroundTransparency = 1
-        SliderLabel.Text = name .. ": " .. default
-        SliderLabel.TextColor3 = Color3.new(1, 1, 1)
-        SliderLabel.TextSize = 14
-        SliderLabel.Font = Enum.Font.Gotham
-        SliderLabel.Parent = SliderFrame
-
-        local SliderTrack = Instance.new("Frame")
-        SliderTrack.Size = UDim2.new(0, 200, 0, 6)
-        SliderTrack.Position = UDim2.new(0, 0, 0, 25)
-        SliderTrack.BackgroundColor3 = Color3.new(0.3, 0.3, 0.3)
-        SliderTrack.Parent = SliderFrame
-
-        local TrackCorner = Instance.new("UICorner")
-        TrackCorner.CornerRadius = UDim.new(1, 0)
-        TrackCorner.Parent = SliderTrack
-
-        local SliderFill = Instance.new("Frame")
-        SliderFill.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
-        SliderFill.BackgroundColor3 = Color3.new(0, 0.5, 1)
-        SliderFill.Parent = SliderTrack
-
-        local FillCorner = Instance.new("UICorner")
-        FillCorner.CornerRadius = UDim.new(1, 0)
-        FillCorner.Parent = SliderFill
-
-        local SliderButton = Instance.new("TextButton")
-        SliderButton.Size = UDim2.new(0, 20, 0, 20)
-        SliderButton.BackgroundColor3 = Color3.new(1, 1, 1)
-        SliderButton.Text = ""
-        SliderButton.Parent = SliderFrame
-
-        local ButtonCorner = Instance.new("UICorner")
-        ButtonCorner.CornerRadius = UDim.new(1, 0)
-        ButtonCorner.Parent = SliderButton
-
-        local function updateValue(value)
-            local percent = math.clamp((value - min) / (max - min), 0, 1)
-            SliderFill.Size = UDim2.new(percent, 0, 1, 0)
-            SliderButton.Position = UDim2.new(percent, -10, 0, 20)
-            SliderLabel.Text = name .. ": " .. math.floor(value)
-            if callback then
-                callback(value)
+    local function UpdateContent()
+        -- Очистка контента
+        for _, child in pairs(ContentPanel:GetChildren()) do
+            if child:IsA("Frame") or child:IsA("TextButton") or child:IsA("TextLabel") then
+                child:Destroy()
             end
         end
 
-        updateValue(default)
-
-        local dragging = false
-
-        SliderButton.MouseButton1Down:Connect(function()
-            dragging = true
-        end)
-
-        game:GetService("UserInputService").InputEnded:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                dragging = false
+        -- Обновление цвета активной кнопки
+        for sectionName, btn in pairs(SectionButtons) do
+            if sectionName == CurrentSection then
+                btn.BackgroundColor3 = Color3.new(0, 0.5, 1)
+            else
+                btn.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
             end
-        end)
+        end
 
-        game:GetService("UserInputService").InputChanged:Connect(function(input)
-            if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-                local relativeX = (input.Position.X - SliderTrack.AbsolutePosition.X) / SliderTrack.AbsoluteSize.X
-                local value = min + (max - min) * math.clamp(relativeX, 0, 1)
-                updateValue(value)
-            end
-        end)
+        -- Функции для создания элементов
+        local function CreateToggle(name, position, callback)
+            local ToggleFrame = Instance.new("Frame")
+            ToggleFrame.Size = UDim2.new(0, 200, 0, 30)
+            ToggleFrame.Position = UDim2.new(0, 20, 0, position)
+            ToggleFrame.BackgroundTransparency = 1
+            ToggleFrame.Parent = ContentPanel
 
-        return SliderFrame
+            local ToggleButton = Instance.new("TextButton")
+            ToggleButton.Size = UDim2.new(0, 30, 0, 30)
+            ToggleButton.Position = UDim2.new(0, 0, 0, 0)
+            ToggleButton.BackgroundColor3 = Color3.new(0.3, 0.3, 0.3)
+            ToggleButton.Text = ""
+            ToggleButton.Parent = ToggleFrame
+
+            local ToggleCorner = Instance.new("UICorner")
+            ToggleCorner.CornerRadius = UDim.new(0, 6)
+            ToggleCorner.Parent = ToggleButton
+
+            local ToggleLabel = Instance.new("TextLabel")
+            ToggleLabel.Size = UDim2.new(0, 160, 0, 30)
+            ToggleLabel.Position = UDim2.new(0, 40, 0, 0)
+            ToggleLabel.BackgroundTransparency = 1
+            ToggleLabel.Text = name
+            ToggleLabel.TextColor3 = Color3.new(1, 1, 1)
+            ToggleLabel.TextSize = 14
+            ToggleLabel.TextXAlignment = Enum.TextXAlignment.Left
+            ToggleLabel.Font = Enum.Font.Gotham
+            ToggleLabel.Parent = ToggleFrame
+
+            local isToggled = false
+
+            ToggleButton.MouseButton1Click:Connect(function()
+                isToggled = not isToggled
+                if isToggled then
+                    ToggleButton.BackgroundColor3 = Color3.new(0, 0.5, 1)
+                else
+                    ToggleButton.BackgroundColor3 = Color3.new(0.3, 0.3, 0.3)
+                end
+                if callback then
+                    callback(isToggled)
+                end
+            end)
+
+            return ToggleFrame
+        end
+
+        local function CreateButton(name, position, callback)
+            local Button = Instance.new("TextButton")
+            Button.Size = UDim2.new(0, 200, 0, 35)
+            Button.Position = UDim2.new(0, 20, 0, position)
+            Button.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
+            Button.Text = name
+            Button.TextColor3 = Color3.new(1, 1, 1)
+            Button.TextSize = 14
+            Button.Font = Enum.Font.Gotham
+            Button.Parent = ContentPanel
+
+            local ButtonCorner = Instance.new("UICorner")
+            ButtonCorner.CornerRadius = UDim.new(0, 8)
+            ButtonCorner.Parent = Button
+
+            Button.MouseButton1Click:Connect(function()
+                if callback then
+                    callback()
+                end
+            end)
+
+            return Button
+        end
+
+        local function CreateValueButton(name, position, values, currentIndex, callback)
+            local ValueFrame = Instance.new("Frame")
+            ValueFrame.Size = UDim2.new(0, 200, 0, 35)
+            ValueFrame.Position = UDim2.new(0, 20, 0, position)
+            ValueFrame.BackgroundTransparency = 1
+            ValueFrame.Parent = ContentPanel
+
+            local ValueButton = Instance.new("TextButton")
+            ValueButton.Size = UDim2.new(0, 200, 0, 35)
+            ValueButton.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
+            ValueButton.Text = name .. ": " .. tostring(values[currentIndex])
+            ValueButton.TextColor3 = Color3.new(1, 1, 1)
+            ValueButton.TextSize = 14
+            ValueButton.Font = Enum.Font.Gotham
+            ValueButton.Parent = ValueFrame
+
+            local ButtonCorner = Instance.new("UICorner")
+            ButtonCorner.CornerRadius = UDim.new(0, 8)
+            ButtonCorner.Parent = ValueButton
+
+            ValueButton.MouseButton1Click:Connect(function()
+                currentIndex = currentIndex % #values + 1
+                ValueButton.Text = name .. ": " .. tostring(values[currentIndex])
+                if callback then
+                    callback(values[currentIndex])
+                end
+            end)
+
+            return ValueFrame
+        end
+
+        -- Содержимое разделов
+        if CurrentSection == "Main" then
+            ContentPanel.CanvasSize = UDim2.new(0, 0, 0, 400)
+            
+            CreateToggle("NoClip", 20, function(toggle)
+                Noclip = toggle
+                if toggle then
+                    spawn(function()
+                        while Noclip and game.Players.LocalPlayer.Character do
+                            wait()
+                            for _, part in pairs(game.Players.LocalPlayer.Character:GetDescendants()) do
+                                if part:IsA("BasePart") then
+                                    part.CanCollide = false
+                                end
+                            end
+                        end
+                    end)
+                end
+            end)
+
+            CreateToggle("Fly", 60, FlyFunc)
+            CreateToggle("Infinite Jump", 100, InfiniteJumpFunc)
+            CreateToggle("Speed Hack", 140, SpeedHackFunc)
+            
+            CreateValueButton("Speed Value", 180, {16, 25, 50, 75, 100}, 3, function(value)
+                SpeedValue = value
+                if SpeedHack then
+                    SpeedHackFunc(true)
+                end
+            end)
+            
+            CreateToggle("Jump Hack", 225, JumpHackFunc)
+            
+            CreateValueButton("Jump Value", 265, {50, 75, 100, 150, 200}, 3, function(value)
+                JumpValue = value
+                if JumpHack then
+                    JumpHackFunc(true)
+                end
+            end)
+            
+            CreateToggle("Anti AFK", 310, AntiAFKFunc)
+
+        elseif CurrentSection == "Visual" then
+            ContentPanel.CanvasSize = UDim2.new(0, 0, 0, 200)
+            
+            CreateToggle("Invisible", 20, InvisibleFunc)
+            CreateToggle("Invisible Swap", 60, InvisibleSwapFunc)
+            CreateToggle("Glide", 100, GlideFunc)
+
+        elseif CurrentSection == "Brainrot" then
+            ContentPanel.CanvasSize = UDim2.new(0, 0, 0, 400)
+            
+            CreateToggle("Auto Farm", 20, AutoFarmFunc)
+            CreateToggle("Auto Steal", 60, AutoStealFunc)
+            CreateToggle("Auto Steal Brainrot", 100, AutoStealBrainrotFunc)
+            CreateToggle("Dupe Drainrot", 140, DupeDrainrotFunc)
+            CreateButton("TP to Player", 180, TpToPlayer)
+            CreateButton("TP Players Base", 225, TpPlayersBase)
+            CreateToggle("Auto Save Base", 270, AutoSaveBaseFunc)
+            CreateToggle("Auto Buy", 310, AutoBuyFunc)
+            CreateToggle("Anti Ragdoll", 350, AntiRagdollFunc)
+
+        elseif CurrentSection == "ESP" then
+            ContentPanel.CanvasSize = UDim2.new(0, 0, 0, 200)
+            
+            CreateToggle("ESP Players", 20, function(toggle)
+                if toggle then
+                    -- Включение ESP игроков
+                    for _, player in pairs(game.Players:GetPlayers()) do
+                        if player ~= game.Players.LocalPlayer then
+                            CreatePlayerESP(player)
+                        end
+                    end
+                else
+                    -- Выключение ESP игроков
+                    for _, obj in pairs(game.Workspace:GetChildren()) do
+                        if obj.Name == "PlayerESP_" then
+                            obj:Destroy()
+                        end
+                    end
+                end
+            end)
+
+            CreateToggle("ESP My Base", 60, function(toggle)
+                if toggle then
+                    CreateMyBaseESP()
+                else
+                    -- Выключение ESP своей базы
+                    for _, obj in pairs(game.Workspace:GetChildren()) do
+                        if obj.Name == "MyBaseESP" then
+                            obj:Destroy()
+                        end
+                    end
+                end
+            end)
+
+            CreateToggle("ESP Brainrot", 100, function(toggle)
+                if toggle then
+                    CreateBrainrotESP()
+                else
+                    -- Выключение ESP брейнротов
+                    for _, obj in pairs(game.Workspace:GetChildren()) do
+                        if obj.Name == "BrainrotESP" then
+                            obj:Destroy()
+                        end
+                    end
+                end
+            end)
+
+            CreateToggle("ESP Players Base", 140, function(toggle)
+                if toggle then
+                    CreatePlayersBaseESP()
+                else
+                    -- Выключение ESP баз игроков
+                    for _, obj in pairs(game.Workspace:GetChildren()) do
+                        if obj.Name == "PlayerBaseESP" then
+                            obj:Destroy()
+                        end
+                    end
+                end
+            end)
+
+        elseif CurrentSection == "Info" then
+            ContentPanel.CanvasSize = UDim2.new(0, 0, 0, 300)
+            
+            local InfoText = Instance.new("TextLabel")
+            InfoText.Size = UDim2.new(0, 400, 0, 280)
+            InfoText.Position = UDim2.new(0, 25, 0, 20)
+            InfoText.BackgroundTransparency = 1
+            InfoText.Text = [[FroggiHub - Steal a Brainrot
+
+Version: 1.2
+Created for DeltaX Injector
+
+Features:
+• Main Utilities
+• Visual Mods  
+• Brainrot Functions
+• ESP System
+• Player TP System
+
+Sections:
+Main - Основные функции
+Visual - Визуальные моды
+Brainrot - Функции для игры
+ESP - Отображение объектов
+Info - Информация
+
+Creator: FroggiTeam
+Place: Steal a Brainrot
+
+Thanks for using FroggiHub!]]
+            InfoText.TextColor3 = Color3.new(1, 1, 1)
+            InfoText.TextSize = 14
+            InfoText.TextXAlignment = Enum.TextXAlignment.Left
+            InfoText.TextYAlignment = Enum.TextYAlignment.Top
+            InfoText.Font = Enum.Font.Gotham
+            InfoText.TextWrapped = true
+            InfoText.Parent = ContentPanel
+        end
     end
 
-    local function CreateButton(name, position, callback)
-        local Button = Instance.new("TextButton")
-        Button.Size = UDim2.new(0, 200, 0, 35)
-        Button.Position = UDim2.new(0, 20, 0, position)
-        Button.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
-        Button.Text = name
-        Button.TextColor3 = Color3.new(1, 1, 1)
-        Button.TextSize = 14
-        Button.Font = Enum.Font.Gotham
-        Button.Parent = ContentPanel
+    -- Функции ESP (заглушки)
+    local function CreatePlayerESP(player)
+        -- ESP для игрока с информацией
+        local highlight = Instance.new("Highlight")
+        highlight.Name = "PlayerESP_" .. player.Name
+        highlight.FillColor = Color3.new(1, 0, 0)
+        highlight.OutlineColor = Color3.new(1, 1, 1)
+        highlight.Parent = player.Character or player.CharacterAdded:Wait()
+        
+        -- BillboardGui с информацией
+        local billboard = Instance.new("BillboardGui")
+        billboard.Name = "PlayerInfo"
+        billboard.Size = UDim2.new(0, 200, 0, 100)
+        billboard.StudsOffset = Vector3.new(0, 3, 0)
+        billboard.AlwaysOnTop = true
+        billboard.Parent = player.Character.Head
+        
+        local frame = Instance.new("Frame")
+        frame.Size = UDim2.new(1, 0, 1, 0)
+        frame.BackgroundColor3 = Color3.new(0, 0, 0)
+        frame.BackgroundTransparency = 0.3
+        frame.Parent = billboard
+        
+        local corner = Instance.new("UICorner")
+        corner.CornerRadius = UDim.new(0, 4)
+        corner.Parent = frame
+        
+        local infoLabel = Instance.new("TextLabel")
+        infoLabel.Size = UDim2.new(1, 0, 1, 0)
+        infoLabel.BackgroundTransparency = 1
+        infoLabel.Text = player.Name .. "\nHealth: 100\nMoney: $0\nWeapon: None"
+        infoLabel.TextColor3 = Color3.new(1, 1, 1)
+        infoLabel.TextSize = 12
+        infoLabel.Font = Enum.Font.Gotham
+        infoLabel.TextWrapped = true
+        infoLabel.Parent = frame
+    end
 
-        local ButtonCorner = Instance.new("UICorner")
-        ButtonCorner.CornerRadius = UDim.new(0, 8)
-        ButtonCorner.Parent = Button
+    local function CreateMyBaseESP()
+        -- ESP для своей базы
+        local highlight = Instance.new("Highlight")
+        highlight.Name = "MyBaseESP"
+        highlight.FillColor = Color3.new(0, 1, 0)
+        highlight.OutlineColor = Color3.new(1, 1, 1)
+        -- Найти свою базу и прицепить highlight
+    end
 
-        Button.MouseButton1Click:Connect(function()
-            if callback then
-                callback()
+    local function CreateBrainrotESP()
+        -- ESP для брейнротов
+        for _, brainrot in pairs(game.Workspace:GetChildren()) do
+            if brainrot.Name:find("Brainrot") then
+                local highlight = Instance.new("Highlight")
+                highlight.Name = "BrainrotESP"
+                highlight.FillColor = Color3.new(1, 0.5, 0)
+                highlight.OutlineColor = Color3.new(1, 1, 1)
+                highlight.Parent = brainrot
+                
+                -- Информация о брейнроте
+                local billboard = Instance.new("BillboardGui")
+                billboard.Size = UDim2.new(0, 150, 0, 80)
+                billboard.StudsOffset = Vector3.new(0, 2, 0)
+                billboard.AlwaysOnTop = true
+                billboard.Parent = brainrot
+                
+                local frame = Instance.new("Frame")
+                frame.Size = UDim2.new(1, 0, 1, 0)
+                frame.BackgroundColor3 = Color3.new(0, 0, 0)
+                frame.BackgroundTransparency = 0.3
+                frame.Parent = billboard
+                
+                local infoLabel = Instance.new("TextLabel")
+                infoLabel.Size = UDim2.new(1, 0, 1, 0)
+                infoLabel.BackgroundTransparency = 1
+                infoLabel.Text = "Brainrot\nPrice: $100\nProfit: High\nRarity: Rare"
+                infoLabel.TextColor3 = Color3.new(1, 1, 1)
+                infoLabel.TextSize = 10
+                infoLabel.Font = Enum.Font.Gotham
+                infoLabel.TextWrapped = true
+                infoLabel.Parent = frame
             end
-        end)
+        end
+    end
 
-        return Button
+    local function CreatePlayersBaseESP()
+        -- ESP для баз игроков
+        for _, base in pairs(game.Workspace:GetChildren()) do
+            if base.Name:find("Base") then
+                local highlight = Instance.new("Highlight")
+                highlight.Name = "PlayerBaseESP"
+                highlight.FillColor = Color3.new(0, 0, 1)
+                highlight.OutlineColor = Color3.new(1, 1, 1)
+                highlight.Parent = base
+                
+                local billboard = Instance.new("BillboardGui")
+                billboard.Size = UDim2.new(0, 180, 0, 60)
+                billboard.StudsOffset = Vector3.new(0, 2, 0)
+                billboard.AlwaysOnTop = true
+                billboard.Parent = base
+                
+                local frame = Instance.new("Frame")
+                frame.Size = UDim2.new(1, 0, 1, 0)
+                frame.BackgroundColor3 = Color3.new(0, 0, 0)
+                frame.BackgroundTransparency = 0.3
+                frame.Parent = billboard
+                
+                local infoLabel = Instance.new("TextLabel")
+                infoLabel.Size = UDim2.new(1, 0, 1, 0)
+                infoLabel.BackgroundTransparency = 1
+                infoLabel.Text = "Player Base\nOwner: Unknown\nStatus: Open\nBrainrots: 3"
+                infoLabel.TextColor3 = Color3.new(1, 1, 1)
+                infoLabel.TextSize = 10
+                infoLabel.Font = Enum.Font.Gotham
+                infoLabel.TextWrapped = true
+                infoLabel.Parent = frame
+            end
+        end
     end
 
     -- Переменные для функций
@@ -435,28 +647,12 @@ local function CreateGUI()
     local Flying = false
     local InfiniteJump = false
     local SpeedHack = false
-    local SpeedValue = 16
+    local SpeedValue = 50
     local JumpHack = false
-    local JumpValue = 50
+    local JumpValue = 100
     local FlyConnection
 
-    -- Исправленные функции
-    local function NoClipFunc(toggle)
-        Noclip = toggle
-        if toggle then
-            spawn(function()
-                while Noclip and game.Players.LocalPlayer.Character do
-                    wait()
-                    for _, part in pairs(game.Players.LocalPlayer.Character:GetDescendants()) do
-                        if part:IsA("BasePart") then
-                            part.CanCollide = false
-                        end
-                    end
-                end
-            end)
-        end
-    end
-
+    -- Функции
     local function FlyFunc(toggle)
         Flying = toggle
         local player = game.Players.LocalPlayer
@@ -581,79 +777,35 @@ local function CreateGUI()
     local function AutoBuyFunc(toggle) end
     local function DupeDrainrotFunc(toggle) end
 
-    -- Обновление контента
-    local function UpdateContent()
-        -- Очистка контента
-        for _, child in pairs(ContentPanel:GetChildren()) do
-            if child:IsA("Frame") or child:IsA("TextButton") then
-                child:Destroy()
-            end
-        end
+    -- Создание кнопок разделов
+    local function CreateSectionButton(name, position)
+        local Button = Instance.new("TextButton")
+        Button.Size = UDim2.new(0, 140, 0, 35)
+        Button.Position = UDim2.new(0, 5, 0, position)
+        Button.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
+        Button.Text = name
+        Button.TextColor3 = Color3.new(1, 1, 1)
+        Button.TextSize = 14
+        Button.Font = Enum.Font.Gotham
+        Button.Parent = SidePanel
 
-        if CurrentSection == "Main" then
-            CreateToggle("NoClip", 20, NoClipFunc)
-            CreateToggle("Fly", 60, FlyFunc)
-            CreateToggle("Infinite Jump", 100, InfiniteJumpFunc)
-            CreateToggle("Speed Hack", 140, SpeedHackFunc)
-            CreateSlider("Speed Value", 180, 16, 100, 50, function(value)
-                SpeedValue = value
-                if SpeedHack then
-                    SpeedHackFunc(true)
-                end
-            end)
-            CreateToggle("Jump Hack", 240, JumpHackFunc)
-            CreateSlider("Jump Value", 280, 50, 200, 100, function(value)
-                JumpValue = value
-                if JumpHack then
-                    JumpHackFunc(true)
-                end
-            end)
-            CreateToggle("Anti AFK", 340, AntiAFKFunc)
+        local ButtonCorner = Instance.new("UICorner")
+        ButtonCorner.CornerRadius = UDim.new(0, 8)
+        ButtonCorner.Parent = Button
 
-        elseif CurrentSection == "Visual" then
-            CreateToggle("Invisible", 20, InvisibleFunc)
-            CreateToggle("Invisible Swap", 60, InvisibleSwapFunc)
-            CreateToggle("Glide", 100, GlideFunc)
+        SectionButtons[name] = Button
 
-        elseif CurrentSection == "Brainrot" then
-            CreateToggle("Auto Farm", 20, AutoFarmFunc)
-            CreateToggle("Auto Steal", 60, AutoStealFunc)
-            CreateToggle("Auto Steal Brainrot", 100, AutoStealBrainrotFunc)
-            CreateToggle("Dupe Drainrot", 140, DupeDrainrotFunc)
-            CreateButton("TP to Player", 180, TpToPlayer)
-            CreateButton("TP Players Base", 225, TpPlayersBase)
-            CreateToggle("Auto Save Base", 270, AutoSaveBaseFunc)
-            CreateToggle("Auto Buy", 310, AutoBuyFunc)
-            CreateToggle("Anti Ragdoll", 350, AntiRagdollFunc)
+        Button.MouseButton1Click:Connect(function()
+            CurrentSection = name
+            UpdateContent()
+        end)
 
-        elseif CurrentSection == "Info" then
-            local InfoText = Instance.new("TextLabel")
-            InfoText.Size = UDim2.new(0, 400, 0, 300)
-            InfoText.Position = UDim2.new(0, 25, 0, 20)
-            InfoText.BackgroundTransparency = 1
-            InfoText.Text = [[FroggiHub - Steal a Brainrot
+        return Button
+    end
 
-Version: 1.1
-Created for DeltaX Injector
-
-Features:
-• Main Utilities
-• Visual Mods  
-• Brainrot Functions
-• Player TP System
-
-Creator: FroggiTeam
-Place: Steal a Brainrot
-
-Thanks for using FroggiHub!]]
-            InfoText.TextColor3 = Color3.new(1, 1, 1)
-            InfoText.TextSize = 14
-            InfoText.TextXAlignment = Enum.TextXAlignment.Left
-            InfoText.TextYAlignment = Enum.TextYAlignment.Top
-            InfoText.Font = Enum.Font.Gotham
-            InfoText.TextWrapped = true
-            InfoText.Parent = ContentPanel
-        end
+    -- Создание всех кнопок разделов
+    for i, section in ipairs(Sections) do
+        CreateSectionButton(section, 10 + (i-1)*45)
     end
 
     -- Инициализация
