@@ -210,8 +210,12 @@ local function CreateGUI()
     local JumpValue = 100
     local Gliding = false
     local Invisible = false
+    local AntiRagdollEnabled = false
     local FlyConnection
     local FlySpeed = 50
+    local SaveBasePosition = nil
+    local AutoSaveBaseEnabled = false
+    local AutoSaveBaseInterval = 30
 
     -- Функция перемещения
     Title.InputBegan:Connect(function(input)
@@ -431,6 +435,31 @@ local function CreateGUI()
         end
     end
 
+    local function AntiRagdollFunc(toggle)
+        AntiRagdollEnabled = toggle
+        if toggle then
+            -- Анти-рагдолл - предотвращает состояние ragdoll
+            local player = game.Players.LocalPlayer
+            if player.Character then
+                local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
+                if humanoid then
+                    humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
+                    humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false)
+                end
+            end
+        else
+            -- Восстановление обычного состояния
+            local player = game.Players.LocalPlayer
+            if player.Character then
+                local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
+                if humanoid then
+                    humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, true)
+                    humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, true)
+                end
+            end
+        end
+    end
+
     local function TpToPlayer()
         -- Меню выбора игрока для телепортации
         local playerMenu = Instance.new("Frame")
@@ -573,21 +602,112 @@ local function CreateGUI()
         end)
     end
 
-    -- НЕРАБОЧИЕ функции
-    local function AntiRagdollFunc(toggle) 
-        print("Anti Ragdoll - НЕРАБОЧАЯ")
+    local function ShowAutoSaveBaseMenu()
+        local saveMenu = Instance.new("Frame")
+        saveMenu.Size = UDim2.new(0, 300, 0, 250)
+        saveMenu.Position = UDim2.new(0.5, -150, 0.5, -125)
+        saveMenu.BackgroundColor3 = Color3.new(0.1, 0.1, 0.1)
+        saveMenu.Parent = ScreenGui
+
+        local title = Instance.new("TextLabel")
+        title.Size = UDim2.new(1, 0, 0, 30)
+        title.Text = "Auto Save Base Settings"
+        title.TextColor3 = Color3.new(1, 1, 1)
+        title.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
+        title.Parent = saveMenu
+
+        -- Кнопка задания точки сохранения
+        local setPointBtn = Instance.new("TextButton")
+        setPointBtn.Size = UDim2.new(0, 200, 0, 35)
+        setPointBtn.Position = UDim2.new(0.5, -100, 0, 40)
+        setPointBtn.Text = "Set Save Point"
+        setPointBtn.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
+        setPointBtn.TextColor3 = Color3.new(1, 1, 1)
+        setPointBtn.Parent = saveMenu
+
+        setPointBtn.MouseButton1Click:Connect(function()
+            if game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                SaveBasePosition = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame
+                setPointBtn.Text = "Point Saved!"
+                wait(1)
+                setPointBtn.Text = "Set Save Point"
+            end
+        end)
+
+        -- Поле ввода интервала
+        local intervalLabel = Instance.new("TextLabel")
+        intervalLabel.Size = UDim2.new(0, 200, 0, 20)
+        intervalLabel.Position = UDim2.new(0.5, -100, 0, 85)
+        intervalLabel.Text = "Teleport Interval (seconds):"
+        intervalLabel.TextColor3 = Color3.new(1, 1, 1)
+        intervalLabel.BackgroundTransparency = 1
+        intervalLabel.Parent = saveMenu
+
+        local intervalBox = Instance.new("TextBox")
+        intervalBox.Size = UDim2.new(0, 200, 0, 30)
+        intervalBox.Position = UDim2.new(0.5, -100, 0, 105)
+        intervalBox.Text = tostring(AutoSaveBaseInterval)
+        intervalBox.PlaceholderText = "Enter seconds"
+        intervalBox.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
+        intervalBox.TextColor3 = Color3.new(1, 1, 1)
+        intervalBox.Parent = saveMenu
+
+        -- Кнопка принятия
+        local acceptBtn = Instance.new("TextButton")
+        acceptBtn.Size = UDim2.new(0, 200, 0, 35)
+        acceptBtn.Position = UDim2.new(0.5, -100, 0, 150)
+        acceptBtn.Text = "Accept"
+        acceptBtn.BackgroundColor3 = Color3.new(0.2, 0.7, 0.2)
+        acceptBtn.TextColor3 = Color3.new(1, 1, 1)
+        acceptBtn.Parent = saveMenu
+
+        local closeBtn = Instance.new("TextButton")
+        closeBtn.Size = UDim2.new(0, 25, 0, 25)
+        closeBtn.Position = UDim2.new(1, -30, 0, 5)
+        closeBtn.Text = "X"
+        closeBtn.BackgroundColor3 = Color3.new(1, 0.3, 0.3)
+        closeBtn.Parent = saveMenu
+        closeBtn.MouseButton1Click:Connect(function()
+            saveMenu:Destroy()
+        end)
+
+        acceptBtn.MouseButton1Click:Connect(function()
+            local newInterval = tonumber(intervalBox.Text)
+            if newInterval and newInterval > 0 then
+                AutoSaveBaseInterval = newInterval
+                saveMenu:Destroy()
+            else
+                intervalBox.Text = "Invalid"
+            end
+        end)
     end
 
+    local function AutoSaveBaseFunc(toggle)
+        AutoSaveBaseEnabled = toggle
+        if toggle then
+            if not SaveBasePosition then
+                ShowAutoSaveBaseMenu()
+            else
+                -- Запуск авто-телепортации
+                spawn(function()
+                    while AutoSaveBaseEnabled do
+                        wait(AutoSaveBaseInterval)
+                        if game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                            game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = SaveBasePosition
+                        end
+                    end
+                end)
+            end
+        end
+    end
+
+    -- НЕРАБОЧИЕ функции
     local function AutoFarmFunc(toggle) 
         print("Auto Farm - НЕРАБОЧАЯ")
     end
 
     local function InvisibleSwapFunc(toggle) 
         print("Invisible Swap - НЕРАБОЧАЯ")
-    end
-
-    local function AutoSaveBaseFunc(toggle) 
-        print("Auto Save Base - НЕРАБОЧАЯ")
     end
 
     local selectedBrainrots = {}
@@ -615,7 +735,7 @@ local function CreateGUI()
 
     -- Функции ESP
     local function CreatePlayerESP(player)
-        -- ESP для игрока
+        -- ESP для игрока (без фона)
         if player.Character then
             local highlight = Instance.new("Highlight")
             highlight.Name = "PlayerESP_" .. player.Name
@@ -623,28 +743,24 @@ local function CreateGUI()
             highlight.OutlineColor = Color3.new(1, 1, 1)
             highlight.Parent = player.Character
             
-            -- Информация над игроком
+            -- Информация над игроком (без фона)
             local billboard = Instance.new("BillboardGui")
             billboard.Name = "PlayerInfo"
             billboard.Size = UDim2.new(0, 200, 0, 100)
             billboard.StudsOffset = Vector3.new(0, 3, 0)
             billboard.AlwaysOnTop = true
             
-            local frame = Instance.new("Frame")
-            frame.Size = UDim2.new(1, 0, 1, 0)
-            frame.BackgroundColor3 = Color3.new(0, 0, 0)
-            frame.BackgroundTransparency = 0.3
-            frame.Parent = billboard
-            
             local infoLabel = Instance.new("TextLabel")
             infoLabel.Size = UDim2.new(1, 0, 1, 0)
-            infoLabel.BackgroundTransparency = 1
+            infoLabel.BackgroundTransparency = 1  -- Прозрачный фон
             infoLabel.Text = player.Name .. "\nHealth: 100\nMoney: $0"
             infoLabel.TextColor3 = Color3.new(1, 1, 1)
             infoLabel.TextSize = 12
-            infoLabel.Font = Enum.Font.Gotham
+            infoLabel.Font = Enum.Font.GothamBold
             infoLabel.TextWrapped = true
-            infoLabel.Parent = frame
+            infoLabel.TextStrokeTransparency = 0  -- Обводка текста для читаемости
+            infoLabel.TextStrokeColor3 = Color3.new(0, 0, 0)
+            infoLabel.Parent = billboard
             
             if player.Character:FindFirstChild("Head") then
                 billboard.Parent = player.Character.Head
@@ -804,7 +920,7 @@ local function CreateGUI()
 
         -- Содержимое разделов
         if CurrentSection == "Main" then
-            ContentPanel.CanvasSize = UDim2.new(0, 0, 0, 400)
+            ContentPanel.CanvasSize = UDim2.new(0, 0, 0, 450)
             
             CreateToggle("NoClip", 20, function(toggle)
                 Noclip = toggle
@@ -844,6 +960,7 @@ local function CreateGUI()
             
             CreateToggle("Glide", 310, GlideFunc)
             CreateToggle("Anti AFK", 350, AntiAFKFunc)
+            CreateToggle("Anti Ragdoll", 390, AntiRagdollFunc)
 
         elseif CurrentSection == "Visual" then
             ContentPanel.CanvasSize = UDim2.new(0, 0, 0, 100)
@@ -859,9 +976,8 @@ local function CreateGUI()
             CreateToggle("Dupe Brainrot - НЕРАБОЧАЯ", 100, DupeBrainrotFunc)
             CreateButton("TP to Player", 140, TpToPlayer)
             CreateButton("TP Players Base - НЕРАБОЧАЯ", 185, TpPlayersBase)
-            CreateToggle("Auto Save Base - НЕРАБОЧАЯ", 230, AutoSaveBaseFunc)
+            CreateToggle("Auto Save Base", 230, AutoSaveBaseFunc)
             CreateToggle("Auto Buy - НЕРАБОЧАЯ", 270, AutoBuyFunc)
-            CreateToggle("Anti Ragdoll - НЕРАБОЧАЯ", 310, AntiRagdollFunc)
 
         elseif CurrentSection == "ESP" then
             ContentPanel.CanvasSize = UDim2.new(0, 0, 0, 200)
@@ -899,17 +1015,14 @@ Created for DeltaX Injector
 • Jump Hack
 • Glide
 • Anti AFK
+• Anti Ragdoll
 • Invisible
 • TP to Player
 • ESP Players
+• Auto Save Base
 
 НЕРАБОЧИЕ ФУНКЦИИ:
 (требуют настройки под игру)
-
-Для настройки нужно:
-1. Открыть Developer Console (F9)
-2. Найти названия объектов в Explorer
-3. Заменить заглушки в коде
 
 Creator: FroggiTeam
 Place: Steal a Brainrot
