@@ -187,7 +187,7 @@ local function CreateGUI()
     ContentPanel.ScrollBarThickness = 6
     ContentPanel.ScrollBarImageColor3 = Color3.new(0.3, 0.3, 0.3)
     ContentPanel.VerticalScrollBarInset = Enum.ScrollBarInset.Always
-    ContentPanel.CanvasSize = UDim2.new(0, 0, 0, 400)
+    ContentPanel.CanvasSize = UDim2.new(0, 0, 0, 500)
     ContentPanel.Parent = MainFrame
 
     local ContentCorner = Instance.new("UICorner")
@@ -212,7 +212,15 @@ local function CreateGUI()
         AntiRagdollEnabled = false,
         AntiAFKEnabled = false,
         AutoSaveBaseEnabled = false,
-        ESPPlayersEnabled = false
+        ESPPlayersEnabled = false,
+        InvisibleSwap = false,
+        AutoFarm = false,
+        AutoSteal = false,
+        DupeBrainrot = false,
+        AutoBuy = false,
+        ESPMyBase = false,
+        ESPBrainrot = false,
+        ESPPlayersBase = false
     }
 
     local FlyConnection
@@ -222,6 +230,7 @@ local function CreateGUI()
     local SaveBasePosition = nil
     local AutoSaveBaseInterval = 30
     local ToggleButtons = {} -- Хранит ссылки на кнопки переключателей
+    local AutoSaveBaseConnection
 
     -- Функция перемещения
     Title.InputBegan:Connect(function(input)
@@ -270,7 +279,7 @@ local function CreateGUI()
     local Sections = {"Main", "Visual", "Brainrot", "ESP", "Info"}
     local SectionButtons = {}
 
-    -- Функции (остаются без изменений, как в предыдущем коде)
+    -- Функции
     local function FlyFunc(toggle)
         ToggleStates.Flying = toggle
         local player = game.Players.LocalPlayer
@@ -481,17 +490,270 @@ local function CreateGUI()
         end
     end
 
+    local function TpToPlayer()
+        local playerMenu = Instance.new("Frame")
+        playerMenu.Size = UDim2.new(0, 250, 0, 350)
+        playerMenu.Position = UDim2.new(0.5, -125, 0.5, -175)
+        playerMenu.BackgroundColor3 = Color3.new(0.1, 0.1, 0.1)
+        playerMenu.Parent = ScreenGui
+
+        local scrollFrame = Instance.new("ScrollingFrame")
+        scrollFrame.Size = UDim2.new(1, -10, 1, -40)
+        scrollFrame.Position = UDim2.new(0, 5, 0, 35)
+        scrollFrame.BackgroundTransparency = 1
+        scrollFrame.ScrollBarThickness = 6
+        scrollFrame.Parent = playerMenu
+
+        local title = Instance.new("TextLabel")
+        title.Size = UDim2.new(1, 0, 0, 30)
+        title.Text = "Select Player to TP"
+        title.TextColor3 = Color3.new(1, 1, 1)
+        title.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
+        title.Parent = playerMenu
+
+        local closeBtn = Instance.new("TextButton")
+        closeBtn.Size = UDim2.new(0, 20, 0, 20)
+        closeBtn.Position = UDim2.new(1, -25, 0, 5)
+        closeBtn.Text = "X"
+        closeBtn.BackgroundColor3 = Color3.new(1, 0.3, 0.3)
+        closeBtn.Parent = playerMenu
+        closeBtn.MouseButton1Click:Connect(function()
+            playerMenu:Destroy()
+        end)
+
+        local yPos = 0
+        for _, player in pairs(game.Players:GetPlayers()) do
+            if player ~= game.Players.LocalPlayer then
+                local btn = Instance.new("TextButton")
+                btn.Size = UDim2.new(1, -10, 0, 25)
+                btn.Position = UDim2.new(0, 5, 0, yPos)
+                btn.Text = player.Name
+                btn.BackgroundColor3 = Color3.new(0.3, 0.3, 0.3)
+                btn.TextColor3 = Color3.new(1, 1, 1)
+                btn.TextSize = 11
+                btn.Parent = scrollFrame
+                btn.MouseButton1Click:Connect(function()
+                    if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                        game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = player.Character.HumanoidRootPart.CFrame
+                    end
+                    playerMenu:Destroy()
+                end)
+                yPos = yPos + 30
+            end
+        end
+        scrollFrame.CanvasSize = UDim2.new(0, 0, 0, yPos)
+    end
+
+    local function TpPlayersBase()
+        local baseMenu = Instance.new("Frame")
+        baseMenu.Size = UDim2.new(0, 250, 0, 180)
+        baseMenu.Position = UDim2.new(0.5, -125, 0.5, -90)
+        baseMenu.BackgroundColor3 = Color3.new(0.1, 0.1, 0.1)
+        baseMenu.Parent = ScreenGui
+
+        local title = Instance.new("TextLabel")
+        title.Size = UDim2.new(1, 0, 0, 30)
+        title.Text = "TP Players Base - НЕРАБОЧАЯ"
+        title.TextColor3 = Color3.new(1, 1, 1)
+        title.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
+        title.Parent = baseMenu
+
+        local message = Instance.new("TextLabel")
+        message.Size = UDim2.new(1, -20, 0, 100)
+        message.Position = UDim2.new(0, 10, 0, 40)
+        message.Text = "Эта функция требует настройки под конкретную игру.\n\nНужно найти названия баз игроков в Explorer."
+        message.TextColor3 = Color3.new(1, 1, 1)
+        message.TextSize = 11
+        message.TextWrapped = true
+        message.BackgroundTransparency = 1
+        message.Parent = baseMenu
+
+        local closeBtn = Instance.new("TextButton")
+        closeBtn.Size = UDim2.new(0, 80, 0, 25)
+        closeBtn.Position = UDim2.new(0.5, -40, 1, -35)
+        closeBtn.Text = "Закрыть"
+        closeBtn.BackgroundColor3 = Color3.new(1, 0.3, 0.3)
+        closeBtn.Parent = baseMenu
+        closeBtn.MouseButton1Click:Connect(function()
+            baseMenu:Destroy()
+        end)
+    end
+
+    local function ShowAutoSaveBaseMenu()
+        local saveMenu = Instance.new("Frame")
+        saveMenu.Size = UDim2.new(0, 250, 0, 200)
+        saveMenu.Position = UDim2.new(0.5, -125, 0.5, -100)
+        saveMenu.BackgroundColor3 = Color3.new(0.1, 0.1, 0.1)
+        saveMenu.Parent = ScreenGui
+
+        local title = Instance.new("TextLabel")
+        title.Size = UDim2.new(1, 0, 0, 30)
+        title.Text = "Auto Save Base Settings"
+        title.TextColor3 = Color3.new(1, 1, 1)
+        title.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
+        title.Parent = saveMenu
+
+        local setPointBtn = Instance.new("TextButton")
+        setPointBtn.Size = UDim2.new(0, 180, 0, 30)
+        setPointBtn.Position = UDim2.new(0.5, -90, 0, 40)
+        setPointBtn.Text = "Set Save Point"
+        setPointBtn.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
+        setPointBtn.TextColor3 = Color3.new(1, 1, 1)
+        setPointBtn.TextSize = 11
+        setPointBtn.Parent = saveMenu
+
+        setPointBtn.MouseButton1Click:Connect(function()
+            if game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                SaveBasePosition = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame
+                setPointBtn.Text = "Point Saved!"
+                wait(1)
+                setPointBtn.Text = "Set Save Point"
+            end
+        end)
+
+        local intervalLabel = Instance.new("TextLabel")
+        intervalLabel.Size = UDim2.new(0, 180, 0, 20)
+        intervalLabel.Position = UDim2.new(0.5, -90, 0, 80)
+        intervalLabel.Text = "Teleport Interval (seconds):"
+        intervalLabel.TextColor3 = Color3.new(1, 1, 1)
+        intervalLabel.BackgroundTransparency = 1
+        intervalLabel.TextSize = 11
+        intervalLabel.Parent = saveMenu
+
+        local intervalBox = Instance.new("TextBox")
+        intervalBox.Size = UDim2.new(0, 180, 0, 25)
+        intervalBox.Position = UDim2.new(0.5, -90, 0, 100)
+        intervalBox.Text = tostring(AutoSaveBaseInterval)
+        intervalBox.PlaceholderText = "Enter seconds"
+        intervalBox.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
+        intervalBox.TextColor3 = Color3.new(1, 1, 1)
+        intervalBox.TextSize = 11
+        intervalBox.Parent = saveMenu
+
+        local acceptBtn = Instance.new("TextButton")
+        acceptBtn.Size = UDim2.new(0, 180, 0, 30)
+        acceptBtn.Position = UDim2.new(0.5, -90, 0, 135)
+        acceptBtn.Text = "Accept"
+        acceptBtn.BackgroundColor3 = Color3.new(0.2, 0.7, 0.2)
+        acceptBtn.TextColor3 = Color3.new(1, 1, 1)
+        acceptBtn.TextSize = 11
+        acceptBtn.Parent = saveMenu
+
+        local closeBtn = Instance.new("TextButton")
+        closeBtn.Size = UDim2.new(0, 20, 0, 20)
+        closeBtn.Position = UDim2.new(1, -25, 0, 5)
+        closeBtn.Text = "X"
+        closeBtn.BackgroundColor3 = Color3.new(1, 0.3, 0.3)
+        closeBtn.Parent = saveMenu
+        closeBtn.MouseButton1Click:Connect(function()
+            saveMenu:Destroy()
+        end)
+
+        acceptBtn.MouseButton1Click:Connect(function()
+            local newInterval = tonumber(intervalBox.Text)
+            if newInterval and newInterval > 0 then
+                AutoSaveBaseInterval = newInterval
+                saveMenu:Destroy()
+            else
+                intervalBox.Text = "Invalid"
+            end
+        end)
+    end
+
+    local function AutoSaveBaseFunc(toggle)
+        ToggleStates.AutoSaveBaseEnabled = toggle
+        if toggle then
+            if not SaveBasePosition then
+                ShowAutoSaveBaseMenu()
+            else
+                if AutoSaveBaseConnection then
+                    AutoSaveBaseConnection:Disconnect()
+                end
+                AutoSaveBaseConnection = game:GetService("RunService").Heartbeat:Connect(function()
+                    if ToggleStates.AutoSaveBaseEnabled and SaveBasePosition then
+                        if game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                            game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = SaveBasePosition
+                        end
+                    end
+                end)
+            end
+        else
+            if AutoSaveBaseConnection then
+                AutoSaveBaseConnection:Disconnect()
+            end
+        end
+    end
+
+    -- Функции ESP
+    local function CreatePlayerESP(player)
+        if player.Character then
+            local highlight = Instance.new("Highlight")
+            highlight.Name = "PlayerESP_" .. player.Name
+            highlight.FillColor = Color3.new(1, 0, 0)
+            highlight.OutlineColor = Color3.new(1, 1, 1)
+            highlight.Parent = player.Character
+            
+            local billboard = Instance.new("BillboardGui")
+            billboard.Name = "PlayerInfo"
+            billboard.Size = UDim2.new(0, 150, 0, 80)
+            billboard.StudsOffset = Vector3.new(0, 3, 0)
+            billboard.AlwaysOnTop = true
+            
+            local infoLabel = Instance.new("TextLabel")
+            infoLabel.Size = UDim2.new(1, 0, 1, 0)
+            infoLabel.BackgroundTransparency = 1
+            infoLabel.Text = player.Name .. "\nHealth: 100\nMoney: $0"
+            infoLabel.TextColor3 = Color3.new(1, 1, 1)
+            infoLabel.TextSize = 10
+            infoLabel.Font = Enum.Font.GothamBold
+            infoLabel.TextWrapped = true
+            infoLabel.TextStrokeTransparency = 0
+            infoLabel.TextStrokeColor3 = Color3.new(0, 0, 0)
+            infoLabel.Parent = billboard
+            
+            if player.Character:FindFirstChild("Head") then
+                billboard.Parent = player.Character.Head
+            end
+        end
+    end
+
+    local function RemovePlayerESP(player)
+        if player.Character then
+            local highlight = player.Character:FindFirstChild("PlayerESP_" .. player.Name)
+            if highlight then
+                highlight:Destroy()
+            end
+            local billboard = player.Character:FindFirstChild("PlayerInfo")
+            if billboard then
+                billboard:Destroy()
+            end
+        end
+    end
+
+    local function ESPPlayersFunc(toggle)
+        ToggleStates.ESPPlayersEnabled = toggle
+        if toggle then
+            for _, player in pairs(game.Players:GetPlayers()) do
+                if player ~= game.Players.LocalPlayer then
+                    CreatePlayerESP(player)
+                end
+            end
+        else
+            for _, player in pairs(game.Players:GetPlayers()) do
+                RemovePlayerESP(player)
+            end
+        end
+    end
+
     local function UpdateContent()
-        -- Очистка контента
         for _, child in pairs(ContentPanel:GetChildren()) do
             if child:IsA("Frame") or child:IsA("TextButton") or child:IsA("TextLabel") then
                 child:Destroy()
             end
         end
 
-        ToggleButtons = {} -- Очищаем старые кнопки
+        ToggleButtons = {}
 
-        -- Обновление цвета активной кнопки
         for sectionName, btn in pairs(SectionButtons) do
             if sectionName == CurrentSection then
                 btn.BackgroundColor3 = Color3.new(0, 0.5, 1)
@@ -500,7 +762,6 @@ local function CreateGUI()
             end
         end
 
-         -- Функции для создания элементов
         local function CreateToggle(name, position, stateKey, callback)
             local ToggleFrame = Instance.new("Frame")
             ToggleFrame.Size = UDim2.new(0, 170, 0, 25)
@@ -530,7 +791,6 @@ local function CreateGUI()
             ToggleLabel.Font = Enum.Font.Gotham
             ToggleLabel.Parent = ToggleFrame
 
-            -- Сохраняем ссылку на кнопку
             ToggleButtons[stateKey] = ToggleButton
 
             ToggleButton.MouseButton1Click:Connect(function()
@@ -603,7 +863,6 @@ local function CreateGUI()
             return ValueFrame
         end
 
-        -- Содержимое разделов
         if CurrentSection == "Main" then
             ContentPanel.CanvasSize = UDim2.new(0, 0, 0, 350)
             
@@ -652,24 +911,9 @@ local function CreateGUI()
             CreateToggle("Dupe Brainrot - НЕРАБОЧАЯ", 75, "DupeBrainrot", function(toggle)
                 print("Dupe Brainrot: " .. tostring(toggle))
             end)
-            CreateButton("TP to Player", 105, function()
-                -- TP to Player функция
-                local player = game.Players.LocalPlayer
-                local targetPlayer = game.Players:FindFirstChild("TargetPlayer") -- Заглушка
-                if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                    player.Character.HumanoidRootPart.CFrame = targetPlayer.Character.HumanoidRootPart.CFrame
-                end
-            end)
-            CreateButton("TP Players Base - НЕРАБОЧАЯ", 140, function()
-                print("TP Players Base clicked")
-            end)
-            CreateToggle("Auto Save Base", 175, "AutoSaveBaseEnabled", function(toggle)
-                -- Auto Save Base функция
-                ToggleStates.AutoSaveBaseEnabled = toggle
-                if toggle and not SaveBasePosition then
-                    SaveBasePosition = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame
-                end
-            end)
+            CreateButton("TP to Player", 105, TpToPlayer)
+            CreateButton("TP Players Base - НЕРАБОЧАЯ", 140, TpPlayersBase)
+            CreateToggle("Auto Save Base", 175, "AutoSaveBaseEnabled", AutoSaveBaseFunc)
             CreateToggle("Auto Buy - НЕРАБОЧАЯ", 205, "AutoBuy", function(toggle)
                 print("Auto Buy: " .. tostring(toggle))
             end)
@@ -677,19 +921,7 @@ local function CreateGUI()
         elseif CurrentSection == "ESP" then
             ContentPanel.CanvasSize = UDim2.new(0, 0, 0, 160)
             
-            CreateToggle("ESP Players", 15, "ESPPlayersEnabled", function(toggle)
-                ToggleStates.ESPPlayersEnabled = toggle
-                if toggle then
-                    -- Включение ESP
-                    for _, player in pairs(game.Players:GetPlayers()) do
-                        if player ~= game.Players.LocalPlayer then
-                            -- Создание ESP для игрока
-                        end
-                    end
-                else
-                    -- Выключение ESP
-                end
-            end)
+            CreateToggle("ESP Players", 15, "ESPPlayersEnabled", ESPPlayersFunc)
             CreateToggle("ESP My Base - НЕРАБОЧАЯ", 45, "ESPMyBase", function(toggle)
                 print("ESP My Base: " .. tostring(toggle))
             end)
@@ -743,7 +975,6 @@ Thanks for using FroggiHub!]]
         end
     end
 
-    -- Создание кнопок разделов
     local function CreateSectionButton(name, position)
         local Button = Instance.new("TextButton")
         Button.Size = UDim2.new(0, 110, 0, 30)
@@ -769,20 +1000,16 @@ Thanks for using FroggiHub!]]
         return Button
     end
 
-    -- Создание всех кнопок разделов
     for i, section in ipairs(Sections) do
         CreateSectionButton(section, 10 + (i-1)*35)
     end
 
-    -- Инициализация
     UpdateContent()
-    SectionButtons["Main"].BackgroundColor3 = Color3.new(0, 0.5, 1) -- Активная кнопка
+    SectionButtons["Main"].BackgroundColor3 = Color3.new(0, 0.5, 1)
     ScreenGui.Parent = game.CoreGui
 
     return ScreenGui
 end
 
--- Запуск GUI
 CreateGUI()
-
 print("FroggiHub - Steal a Brainrot loaded successfully!")
