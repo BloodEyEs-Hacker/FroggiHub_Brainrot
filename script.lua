@@ -200,6 +200,19 @@ local function CreateGUI()
     local isDragging = false
     local dragStart, frameStart
 
+    -- Переменные для функций
+    local Noclip = false
+    local Flying = false
+    local InfiniteJump = false
+    local SpeedHack = false
+    local SpeedValue = 50
+    local JumpHack = false
+    local JumpValue = 100
+    local Gliding = false
+    local Invisible = false
+    local FlyConnection
+    local FlySpeed = 50
+
     -- Функция перемещения
     Title.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -227,13 +240,17 @@ local function CreateGUI()
         ScreenGui:Destroy()
     end)
 
-    -- Кнопка сворачивания
+    -- Кнопка сворачивания (исправленная)
     MinimizeButton.MouseButton1Click:Connect(function()
         isMinimized = not isMinimized
         if isMinimized then
+            SidePanel.Visible = false
+            ContentPanel.Visible = false
             MainFrame.Size = UDim2.new(0, 600, 0, 40)
             MinimizeButton.BackgroundColor3 = Color3.new(0.2, 0.7, 0.2)
         else
+            SidePanel.Visible = true
+            ContentPanel.Visible = true
             MainFrame.Size = UDim2.new(0, 600, 0, 400)
             MinimizeButton.BackgroundColor3 = Color3.new(0.3, 0.3, 0.3)
         end
@@ -242,6 +259,429 @@ local function CreateGUI()
     -- Кнопки разделов
     local Sections = {"Main", "Visual", "Brainrot", "ESP", "Info"}
     local SectionButtons = {}
+
+    -- Функции
+    local function FlyFunc(toggle)
+        Flying = toggle
+        local player = game.Players.LocalPlayer
+        
+        if toggle then
+            local character = player.Character or player.CharacterAdded:Wait()
+            local humanoid = character:WaitForChild("Humanoid")
+            humanoid.PlatformStand = true
+            
+            local bodyGyro = Instance.new("BodyGyro")
+            bodyGyro.P = 1000
+            bodyGyro.D = 50
+            bodyGyro.MaxTorque = Vector3.new(10000, 10000, 10000)
+            bodyGyro.CFrame = character.HumanoidRootPart.CFrame
+            bodyGyro.Parent = character.HumanoidRootPart
+            
+            local bodyVelocity = Instance.new("BodyVelocity")
+            bodyVelocity.Velocity = Vector3.new(0, 0, 0)
+            bodyVelocity.MaxForce = Vector3.new(10000, 10000, 10000)
+            bodyVelocity.Parent = character.HumanoidRootPart
+            
+            FlyConnection = game:GetService("RunService").Heartbeat:Connect(function()
+                if Flying and character and character.HumanoidRootPart then
+                    local camera = workspace.CurrentCamera
+                    local direction = camera.CFrame.LookVector
+                    
+                    if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.W) then
+                        bodyVelocity.Velocity = direction * FlySpeed
+                    elseif game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.S) then
+                        bodyVelocity.Velocity = -direction * FlySpeed
+                    elseif game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.A) then
+                        bodyVelocity.Velocity = -camera.CFrame.RightVector * FlySpeed
+                    elseif game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.D) then
+                        bodyVelocity.Velocity = camera.CFrame.RightVector * FlySpeed
+                    else
+                        bodyVelocity.Velocity = Vector3.new(0, 0, 0)
+                    end
+                    
+                    -- Вертикальное движение
+                    if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.Space) then
+                        bodyVelocity.Velocity = bodyVelocity.Velocity + Vector3.new(0, FlySpeed, 0)
+                    elseif game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.LeftShift) then
+                        bodyVelocity.Velocity = bodyVelocity.Velocity + Vector3.new(0, -FlySpeed, 0)
+                    end
+                end
+            end)
+        else
+            if FlyConnection then
+                FlyConnection:Disconnect()
+            end
+            if player.Character then
+                local humanoid = player.Character:FindFirstChild("Humanoid")
+                if humanoid then
+                    humanoid.PlatformStand = false
+                end
+                local bodyGyro = player.Character.HumanoidRootPart:FindFirstChild("BodyGyro")
+                local bodyVelocity = player.Character.HumanoidRootPart:FindFirstChild("BodyVelocity")
+                if bodyGyro then bodyGyro:Destroy() end
+                if bodyVelocity then bodyVelocity:Destroy() end
+            end
+        end
+    end
+
+    local function InfiniteJumpFunc(toggle)
+        InfiniteJump = toggle
+        local connection
+        if toggle then
+            connection = game:GetService("UserInputService").JumpRequest:Connect(function()
+                if InfiniteJump and game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+                    game.Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid"):ChangeState("Jumping")
+                end
+            end)
+        else
+            if connection then
+                connection:Disconnect()
+            end
+        end
+    end
+
+    local function SpeedHackFunc(toggle)
+        SpeedHack = toggle
+        if toggle then
+            spawn(function()
+                while SpeedHack and game.Players.LocalPlayer.Character do
+                    wait()
+                    local humanoid = game.Players.LocalPlayer.Character:FindFirstChild("Humanoid")
+                    if humanoid then
+                        humanoid.WalkSpeed = SpeedValue
+                    end
+                end
+            end)
+        else
+            if game.Players.LocalPlayer.Character then
+                local humanoid = game.Players.LocalPlayer.Character:FindFirstChild("Humanoid")
+                if humanoid then
+                    humanoid.WalkSpeed = 16
+                end
+            end
+        end
+    end
+
+    local function JumpHackFunc(toggle)
+        JumpHack = toggle
+        if toggle then
+            spawn(function()
+                while JumpHack and game.Players.LocalPlayer.Character do
+                    wait()
+                    local humanoid = game.Players.LocalPlayer.Character:FindFirstChild("Humanoid")
+                    if humanoid then
+                        humanoid.JumpPower = JumpValue
+                    end
+                end
+            end)
+        else
+            if game.Players.LocalPlayer.Character then
+                local humanoid = game.Players.LocalPlayer.Character:FindFirstChild("Humanoid")
+                if humanoid then
+                    humanoid.JumpPower = 50
+                end
+            end
+        end
+    end
+
+    local function GlideFunc(toggle)
+        Gliding = toggle
+        if toggle then
+            spawn(function()
+                while Gliding and game.Players.LocalPlayer.Character do
+                    wait()
+                    local humanoid = game.Players.LocalPlayer.Character:FindFirstChild("Humanoid")
+                    local rootPart = game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                    if humanoid and rootPart and humanoid:GetState() == Enum.HumanoidStateType.Freefall then
+                        rootPart.Velocity = Vector3.new(rootPart.Velocity.X, -10, rootPart.Velocity.Z)
+                    end
+                end
+            end)
+        end
+    end
+
+    local function InvisibleFunc(toggle)
+        Invisible = toggle
+        if toggle then
+            if game.Players.LocalPlayer.Character then
+                for _, part in pairs(game.Players.LocalPlayer.Character:GetDescendants()) do
+                    if part:IsA("BasePart") then
+                        part.Transparency = 1
+                    end
+                end
+            end
+        else
+            if game.Players.LocalPlayer.Character then
+                for _, part in pairs(game.Players.LocalPlayer.Character:GetDescendants()) do
+                    if part:IsA("BasePart") then
+                        part.Transparency = 0
+                    end
+                end
+            end
+        end
+    end
+
+    local function AntiAFKFunc(toggle)
+        if toggle then
+            local VirtualUser = game:GetService("VirtualUser")
+            game:GetService("Players").LocalPlayer.Idled:connect(function()
+                VirtualUser:CaptureController()
+                VirtualUser:ClickButton2(Vector2.new())
+            end)
+        end
+    end
+
+    local function TpToPlayer()
+        -- Меню выбора игрока для телепортации
+        local playerMenu = Instance.new("Frame")
+        playerMenu.Size = UDim2.new(0, 300, 0, 400)
+        playerMenu.Position = UDim2.new(0.5, -150, 0.5, -200)
+        playerMenu.BackgroundColor3 = Color3.new(0.1, 0.1, 0.1)
+        playerMenu.Parent = ScreenGui
+
+        local scrollFrame = Instance.new("ScrollingFrame")
+        scrollFrame.Size = UDim2.new(1, -10, 1, -40)
+        scrollFrame.Position = UDim2.new(0, 5, 0, 35)
+        scrollFrame.BackgroundTransparency = 1
+        scrollFrame.ScrollBarThickness = 8
+        scrollFrame.Parent = playerMenu
+
+        local title = Instance.new("TextLabel")
+        title.Size = UDim2.new(1, 0, 0, 30)
+        title.Text = "Select Player to TP"
+        title.TextColor3 = Color3.new(1, 1, 1)
+        title.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
+        title.Parent = playerMenu
+
+        local closeBtn = Instance.new("TextButton")
+        closeBtn.Size = UDim2.new(0, 25, 0, 25)
+        closeBtn.Position = UDim2.new(1, -30, 0, 5)
+        closeBtn.Text = "X"
+        closeBtn.BackgroundColor3 = Color3.new(1, 0.3, 0.3)
+        closeBtn.Parent = playerMenu
+        closeBtn.MouseButton1Click:Connect(function()
+            playerMenu:Destroy()
+        end)
+
+        local yPos = 0
+        for _, player in pairs(game.Players:GetPlayers()) do
+            if player ~= game.Players.LocalPlayer then
+                local btn = Instance.new("TextButton")
+                btn.Size = UDim2.new(1, -10, 0, 30)
+                btn.Position = UDim2.new(0, 5, 0, yPos)
+                btn.Text = player.Name
+                btn.BackgroundColor3 = Color3.new(0.3, 0.3, 0.3)
+                btn.Parent = scrollFrame
+                btn.MouseButton1Click:Connect(function()
+                    if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                        game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = player.Character.HumanoidRootPart.CFrame
+                    end
+                    playerMenu:Destroy()
+                end)
+                yPos = yPos + 35
+            end
+        end
+        scrollFrame.CanvasSize = UDim2.new(0, 0, 0, yPos)
+    end
+
+    local function TpPlayersBase()
+        -- Меню выбора базы для телепортации (НЕРАБОЧАЯ)
+        local baseMenu = Instance.new("Frame")
+        baseMenu.Size = UDim2.new(0, 300, 0, 200)
+        baseMenu.Position = UDim2.new(0.5, -150, 0.5, -100)
+        baseMenu.BackgroundColor3 = Color3.new(0.1, 0.1, 0.1)
+        baseMenu.Parent = ScreenGui
+
+        local title = Instance.new("TextLabel")
+        title.Size = UDim2.new(1, 0, 0, 30)
+        title.Text = "TP Players Base - НЕРАБОЧАЯ"
+        title.TextColor3 = Color3.new(1, 1, 1)
+        title.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
+        title.Parent = baseMenu
+
+        local message = Instance.new("TextLabel")
+        message.Size = UDim2.new(1, -20, 0, 100)
+        message.Position = UDim2.new(0, 10, 0, 40)
+        message.Text = "Эта функция требует настройки под конкретную игру.\n\nНужно найти названия баз игроков в Explorer."
+        message.TextColor3 = Color3.new(1, 1, 1)
+        message.TextSize = 12
+        message.TextWrapped = true
+        message.BackgroundTransparency = 1
+        message.Parent = baseMenu
+
+        local closeBtn = Instance.new("TextButton")
+        closeBtn.Size = UDim2.new(0, 100, 0, 30)
+        closeBtn.Position = UDim2.new(0.5, -50, 1, -40)
+        closeBtn.Text = "Закрыть"
+        closeBtn.BackgroundColor3 = Color3.new(1, 0.3, 0.3)
+        closeBtn.Parent = baseMenu
+        closeBtn.MouseButton1Click:Connect(function()
+            baseMenu:Destroy()
+        end)
+    end
+
+    local function DupeBrainrotFunc(toggle)
+        if toggle then
+            -- НЕРАБОЧАЯ - нужны реальные названия предметов
+            local player = game.Players.LocalPlayer
+            if player.Character then
+                local tool = player.Character:FindFirstChildOfClass("Tool")
+                if tool then
+                    -- Дюп предмета в руках (заглушка)
+                    print("Dupe Brainrot - НЕРАБОЧАЯ")
+                    print("Нужно настроить дюп для конкретных предметов игры")
+                else
+                    print("Нет предмета в руках для дюпа")
+                end
+            end
+        end
+    end
+
+    local function CreateBrainrotSelector(titleText, callback)
+        -- Меню выбора брейнротов (НЕРАБОЧАЯ)
+        local selectorMenu = Instance.new("Frame")
+        selectorMenu.Size = UDim2.new(0, 300, 0, 200)
+        selectorMenu.Position = UDim2.new(0.5, -150, 0.5, -100)
+        selectorMenu.BackgroundColor3 = Color3.new(0.1, 0.1, 0.1)
+        selectorMenu.Parent = ScreenGui
+
+        local title = Instance.new("TextLabel")
+        title.Size = UDim2.new(1, 0, 0, 30)
+        title.Text = titleText .. " - НЕРАБОЧАЯ"
+        title.TextColor3 = Color3.new(1, 1, 1)
+        title.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
+        title.Parent = selectorMenu
+
+        local message = Instance.new("TextLabel")
+        message.Size = UDim2.new(1, -20, 0, 100)
+        message.Position = UDim2.new(0, 10, 0, 40)
+        message.Text = "Эта функция требует настройки.\n\nНужно найти реальные названия Brainrot предметов в игре через Explorer."
+        message.TextColor3 = Color3.new(1, 1, 1)
+        message.TextSize = 12
+        message.TextWrapped = true
+        message.BackgroundTransparency = 1
+        message.Parent = selectorMenu
+
+        local closeBtn = Instance.new("TextButton")
+        closeBtn.Size = UDim2.new(0, 100, 0, 30)
+        closeBtn.Position = UDim2.new(0.5, -50, 1, -40)
+        closeBtn.Text = "Закрыть"
+        closeBtn.BackgroundColor3 = Color3.new(1, 0.3, 0.3)
+        closeBtn.Parent = selectorMenu
+        closeBtn.MouseButton1Click:Connect(function()
+            selectorMenu:Destroy()
+        end)
+    end
+
+    -- НЕРАБОЧИЕ функции
+    local function AntiRagdollFunc(toggle) 
+        print("Anti Ragdoll - НЕРАБОЧАЯ")
+    end
+
+    local function AutoFarmFunc(toggle) 
+        print("Auto Farm - НЕРАБОЧАЯ")
+    end
+
+    local function InvisibleSwapFunc(toggle) 
+        print("Invisible Swap - НЕРАБОЧАЯ")
+    end
+
+    local function AutoSaveBaseFunc(toggle) 
+        print("Auto Save Base - НЕРАБОЧАЯ")
+    end
+
+    local selectedBrainrots = {}
+    local function AutoStealFunc(toggle)
+        if toggle then
+            CreateBrainrotSelector("Select Brainrots to Auto Steal", function(brainrot)
+                selectedBrainrots[brainrot] = true
+                print("Auto Steal: " .. brainrot)
+            end)
+        else
+            selectedBrainrots = {}
+        end
+    end
+
+    local function AutoBuyFunc(toggle)
+        if toggle then
+            CreateBrainrotSelector("Select Brainrots to Auto Buy", function(brainrot)
+                selectedBrainrots[brainrot] = true
+                print("Auto Buy: " .. brainrot)
+            end)
+        else
+            selectedBrainrots = {}
+        end
+    end
+
+    -- Функции ESP
+    local function CreatePlayerESP(player)
+        -- ESP для игрока
+        if player.Character then
+            local highlight = Instance.new("Highlight")
+            highlight.Name = "PlayerESP_" .. player.Name
+            highlight.FillColor = Color3.new(1, 0, 0)
+            highlight.OutlineColor = Color3.new(1, 1, 1)
+            highlight.Parent = player.Character
+            
+            -- Информация над игроком
+            local billboard = Instance.new("BillboardGui")
+            billboard.Name = "PlayerInfo"
+            billboard.Size = UDim2.new(0, 200, 0, 100)
+            billboard.StudsOffset = Vector3.new(0, 3, 0)
+            billboard.AlwaysOnTop = true
+            
+            local frame = Instance.new("Frame")
+            frame.Size = UDim2.new(1, 0, 1, 0)
+            frame.BackgroundColor3 = Color3.new(0, 0, 0)
+            frame.BackgroundTransparency = 0.3
+            frame.Parent = billboard
+            
+            local infoLabel = Instance.new("TextLabel")
+            infoLabel.Size = UDim2.new(1, 0, 1, 0)
+            infoLabel.BackgroundTransparency = 1
+            infoLabel.Text = player.Name .. "\nHealth: 100\nMoney: $0"
+            infoLabel.TextColor3 = Color3.new(1, 1, 1)
+            infoLabel.TextSize = 12
+            infoLabel.Font = Enum.Font.Gotham
+            infoLabel.TextWrapped = true
+            infoLabel.Parent = frame
+            
+            if player.Character:FindFirstChild("Head") then
+                billboard.Parent = player.Character.Head
+            end
+        end
+    end
+
+    local function RemovePlayerESP(player)
+        if player.Character then
+            local highlight = player.Character:FindFirstChild("PlayerESP_" .. player.Name)
+            if highlight then
+                highlight:Destroy()
+            end
+            local billboard = player.Character:FindFirstChild("PlayerInfo")
+            if billboard then
+                billboard:Destroy()
+            end
+        end
+    end
+
+    local ESPPlayersEnabled = false
+    local function ESPPlayersFunc(toggle)
+        ESPPlayersEnabled = toggle
+        if toggle then
+            -- Включение ESP игроков
+            for _, player in pairs(game.Players:GetPlayers()) do
+                if player ~= game.Players.LocalPlayer then
+                    CreatePlayerESP(player)
+                end
+            end
+        else
+            -- Выключение ESP игроков
+            for _, player in pairs(game.Players:GetPlayers()) do
+                RemovePlayerESP(player)
+            end
+        end
+    end
 
     local function UpdateContent()
         -- Очистка контента
@@ -402,113 +842,74 @@ local function CreateGUI()
                 end
             end)
             
-            CreateToggle("Anti AFK", 310, AntiAFKFunc)
+            CreateToggle("Glide", 310, GlideFunc)
+            CreateToggle("Anti AFK", 350, AntiAFKFunc)
 
         elseif CurrentSection == "Visual" then
-            ContentPanel.CanvasSize = UDim2.new(0, 0, 0, 200)
+            ContentPanel.CanvasSize = UDim2.new(0, 0, 0, 100)
             
             CreateToggle("Invisible", 20, InvisibleFunc)
-            CreateToggle("Invisible Swap", 60, InvisibleSwapFunc)
-            CreateToggle("Glide", 100, GlideFunc)
+            CreateToggle("Invisible Swap - НЕРАБОЧАЯ", 60, InvisibleSwapFunc)
 
         elseif CurrentSection == "Brainrot" then
-            ContentPanel.CanvasSize = UDim2.new(0, 0, 0, 400)
+            ContentPanel.CanvasSize = UDim2.new(0, 0, 0, 350)
             
-            CreateToggle("Auto Farm", 20, AutoFarmFunc)
-            CreateToggle("Auto Steal", 60, AutoStealFunc)
-            CreateToggle("Auto Steal Brainrot", 100, AutoStealBrainrotFunc)
-            CreateToggle("Dupe Drainrot", 140, DupeDrainrotFunc)
-            CreateButton("TP to Player", 180, TpToPlayer)
-            CreateButton("TP Players Base", 225, TpPlayersBase)
-            CreateToggle("Auto Save Base", 270, AutoSaveBaseFunc)
-            CreateToggle("Auto Buy", 310, AutoBuyFunc)
-            CreateToggle("Anti Ragdoll", 350, AntiRagdollFunc)
+            CreateToggle("Auto Farm - НЕРАБОЧАЯ", 20, AutoFarmFunc)
+            CreateToggle("Auto Steal - НЕРАБОЧАЯ", 60, AutoStealFunc)
+            CreateToggle("Dupe Brainrot - НЕРАБОЧАЯ", 100, DupeBrainrotFunc)
+            CreateButton("TP to Player", 140, TpToPlayer)
+            CreateButton("TP Players Base - НЕРАБОЧАЯ", 185, TpPlayersBase)
+            CreateToggle("Auto Save Base - НЕРАБОЧАЯ", 230, AutoSaveBaseFunc)
+            CreateToggle("Auto Buy - НЕРАБОЧАЯ", 270, AutoBuyFunc)
+            CreateToggle("Anti Ragdoll - НЕРАБОЧАЯ", 310, AntiRagdollFunc)
 
         elseif CurrentSection == "ESP" then
             ContentPanel.CanvasSize = UDim2.new(0, 0, 0, 200)
             
-            CreateToggle("ESP Players", 20, function(toggle)
-                if toggle then
-                    -- Включение ESP игроков
-                    for _, player in pairs(game.Players:GetPlayers()) do
-                        if player ~= game.Players.LocalPlayer then
-                            CreatePlayerESP(player)
-                        end
-                    end
-                else
-                    -- Выключение ESP игроков
-                    for _, obj in pairs(game.Workspace:GetChildren()) do
-                        if obj.Name == "PlayerESP_" then
-                            obj:Destroy()
-                        end
-                    end
-                end
+            CreateToggle("ESP Players", 20, ESPPlayersFunc)
+            CreateToggle("ESP My Base - НЕРАБОЧАЯ", 60, function(toggle)
+                print("ESP My Base: " .. tostring(toggle))
             end)
 
-            CreateToggle("ESP My Base", 60, function(toggle)
-                if toggle then
-                    CreateMyBaseESP()
-                else
-                    -- Выключение ESP своей базы
-                    for _, obj in pairs(game.Workspace:GetChildren()) do
-                        if obj.Name == "MyBaseESP" then
-                            obj:Destroy()
-                        end
-                    end
-                end
+            CreateToggle("ESP Brainrot - НЕРАБОЧАЯ", 100, function(toggle)
+                print("ESP Brainrot: " .. tostring(toggle))
             end)
 
-            CreateToggle("ESP Brainrot", 100, function(toggle)
-                if toggle then
-                    CreateBrainrotESP()
-                else
-                    -- Выключение ESP брейнротов
-                    for _, obj in pairs(game.Workspace:GetChildren()) do
-                        if obj.Name == "BrainrotESP" then
-                            obj:Destroy()
-                        end
-                    end
-                end
-            end)
-
-            CreateToggle("ESP Players Base", 140, function(toggle)
-                if toggle then
-                    CreatePlayersBaseESP()
-                else
-                    -- Выключение ESP баз игроков
-                    for _, obj in pairs(game.Workspace:GetChildren()) do
-                        if obj.Name == "PlayerBaseESP" then
-                            obj:Destroy()
-                        end
-                    end
-                end
+            CreateToggle("ESP Players Base - НЕРАБОЧАЯ", 140, function(toggle)
+                print("ESP Players Base: " .. tostring(toggle))
             end)
 
         elseif CurrentSection == "Info" then
-            ContentPanel.CanvasSize = UDim2.new(0, 0, 0, 300)
+            ContentPanel.CanvasSize = UDim2.new(0, 0, 0, 350)
             
             local InfoText = Instance.new("TextLabel")
-            InfoText.Size = UDim2.new(0, 400, 0, 280)
+            InfoText.Size = UDim2.new(0, 400, 0, 330)
             InfoText.Position = UDim2.new(0, 25, 0, 20)
             InfoText.BackgroundTransparency = 1
             InfoText.Text = [[FroggiHub - Steal a Brainrot
 
-Version: 1.2
+Version: 1.3
 Created for DeltaX Injector
 
-Features:
-• Main Utilities
-• Visual Mods  
-• Brainrot Functions
-• ESP System
-• Player TP System
+РАБОЧИЕ ФУНКЦИИ:
+• NoClip
+• Fly (WASD + Space/Shift)
+• Infinite Jump
+• Speed Hack
+• Jump Hack
+• Glide
+• Anti AFK
+• Invisible
+• TP to Player
+• ESP Players
 
-Sections:
-Main - Основные функции
-Visual - Визуальные моды
-Brainrot - Функции для игры
-ESP - Отображение объектов
-Info - Информация
+НЕРАБОЧИЕ ФУНКЦИИ:
+(требуют настройки под игру)
+
+Для настройки нужно:
+1. Открыть Developer Console (F9)
+2. Найти названия объектов в Explorer
+3. Заменить заглушки в коде
 
 Creator: FroggiTeam
 Place: Steal a Brainrot
@@ -523,259 +924,6 @@ Thanks for using FroggiHub!]]
             InfoText.Parent = ContentPanel
         end
     end
-
-    -- Функции ESP (заглушки)
-    local function CreatePlayerESP(player)
-        -- ESP для игрока с информацией
-        local highlight = Instance.new("Highlight")
-        highlight.Name = "PlayerESP_" .. player.Name
-        highlight.FillColor = Color3.new(1, 0, 0)
-        highlight.OutlineColor = Color3.new(1, 1, 1)
-        highlight.Parent = player.Character or player.CharacterAdded:Wait()
-        
-        -- BillboardGui с информацией
-        local billboard = Instance.new("BillboardGui")
-        billboard.Name = "PlayerInfo"
-        billboard.Size = UDim2.new(0, 200, 0, 100)
-        billboard.StudsOffset = Vector3.new(0, 3, 0)
-        billboard.AlwaysOnTop = true
-        billboard.Parent = player.Character.Head
-        
-        local frame = Instance.new("Frame")
-        frame.Size = UDim2.new(1, 0, 1, 0)
-        frame.BackgroundColor3 = Color3.new(0, 0, 0)
-        frame.BackgroundTransparency = 0.3
-        frame.Parent = billboard
-        
-        local corner = Instance.new("UICorner")
-        corner.CornerRadius = UDim.new(0, 4)
-        corner.Parent = frame
-        
-        local infoLabel = Instance.new("TextLabel")
-        infoLabel.Size = UDim2.new(1, 0, 1, 0)
-        infoLabel.BackgroundTransparency = 1
-        infoLabel.Text = player.Name .. "\nHealth: 100\nMoney: $0\nWeapon: None"
-        infoLabel.TextColor3 = Color3.new(1, 1, 1)
-        infoLabel.TextSize = 12
-        infoLabel.Font = Enum.Font.Gotham
-        infoLabel.TextWrapped = true
-        infoLabel.Parent = frame
-    end
-
-    local function CreateMyBaseESP()
-        -- ESP для своей базы
-        local highlight = Instance.new("Highlight")
-        highlight.Name = "MyBaseESP"
-        highlight.FillColor = Color3.new(0, 1, 0)
-        highlight.OutlineColor = Color3.new(1, 1, 1)
-        -- Найти свою базу и прицепить highlight
-    end
-
-    local function CreateBrainrotESP()
-        -- ESP для брейнротов
-        for _, brainrot in pairs(game.Workspace:GetChildren()) do
-            if brainrot.Name:find("Brainrot") then
-                local highlight = Instance.new("Highlight")
-                highlight.Name = "BrainrotESP"
-                highlight.FillColor = Color3.new(1, 0.5, 0)
-                highlight.OutlineColor = Color3.new(1, 1, 1)
-                highlight.Parent = brainrot
-                
-                -- Информация о брейнроте
-                local billboard = Instance.new("BillboardGui")
-                billboard.Size = UDim2.new(0, 150, 0, 80)
-                billboard.StudsOffset = Vector3.new(0, 2, 0)
-                billboard.AlwaysOnTop = true
-                billboard.Parent = brainrot
-                
-                local frame = Instance.new("Frame")
-                frame.Size = UDim2.new(1, 0, 1, 0)
-                frame.BackgroundColor3 = Color3.new(0, 0, 0)
-                frame.BackgroundTransparency = 0.3
-                frame.Parent = billboard
-                
-                local infoLabel = Instance.new("TextLabel")
-                infoLabel.Size = UDim2.new(1, 0, 1, 0)
-                infoLabel.BackgroundTransparency = 1
-                infoLabel.Text = "Brainrot\nPrice: $100\nProfit: High\nRarity: Rare"
-                infoLabel.TextColor3 = Color3.new(1, 1, 1)
-                infoLabel.TextSize = 10
-                infoLabel.Font = Enum.Font.Gotham
-                infoLabel.TextWrapped = true
-                infoLabel.Parent = frame
-            end
-        end
-    end
-
-    local function CreatePlayersBaseESP()
-        -- ESP для баз игроков
-        for _, base in pairs(game.Workspace:GetChildren()) do
-            if base.Name:find("Base") then
-                local highlight = Instance.new("Highlight")
-                highlight.Name = "PlayerBaseESP"
-                highlight.FillColor = Color3.new(0, 0, 1)
-                highlight.OutlineColor = Color3.new(1, 1, 1)
-                highlight.Parent = base
-                
-                local billboard = Instance.new("BillboardGui")
-                billboard.Size = UDim2.new(0, 180, 0, 60)
-                billboard.StudsOffset = Vector3.new(0, 2, 0)
-                billboard.AlwaysOnTop = true
-                billboard.Parent = base
-                
-                local frame = Instance.new("Frame")
-                frame.Size = UDim2.new(1, 0, 1, 0)
-                frame.BackgroundColor3 = Color3.new(0, 0, 0)
-                frame.BackgroundTransparency = 0.3
-                frame.Parent = billboard
-                
-                local infoLabel = Instance.new("TextLabel")
-                infoLabel.Size = UDim2.new(1, 0, 1, 0)
-                infoLabel.BackgroundTransparency = 1
-                infoLabel.Text = "Player Base\nOwner: Unknown\nStatus: Open\nBrainrots: 3"
-                infoLabel.TextColor3 = Color3.new(1, 1, 1)
-                infoLabel.TextSize = 10
-                infoLabel.Font = Enum.Font.Gotham
-                infoLabel.TextWrapped = true
-                infoLabel.Parent = frame
-            end
-        end
-    end
-
-    -- Переменные для функций
-    local Noclip = false
-    local Flying = false
-    local InfiniteJump = false
-    local SpeedHack = false
-    local SpeedValue = 50
-    local JumpHack = false
-    local JumpValue = 100
-    local FlyConnection
-
-    -- Функции
-    local function FlyFunc(toggle)
-        Flying = toggle
-        local player = game.Players.LocalPlayer
-        
-        if toggle then
-            local character = player.Character or player.CharacterAdded:Wait()
-            local humanoid = character:WaitForChild("Humanoid")
-            humanoid.PlatformStand = true
-            
-            local bodyGyro = Instance.new("BodyGyro")
-            bodyGyro.P = 1000
-            bodyGyro.D = 50
-            bodyGyro.MaxTorque = Vector3.new(10000, 10000, 10000)
-            bodyGyro.CFrame = character.HumanoidRootPart.CFrame
-            bodyGyro.Parent = character.HumanoidRootPart
-            
-            local bodyVelocity = Instance.new("BodyVelocity")
-            bodyVelocity.Velocity = Vector3.new(0, 0, 0)
-            bodyVelocity.MaxForce = Vector3.new(10000, 10000, 10000)
-            bodyVelocity.Parent = character.HumanoidRootPart
-            
-            FlyConnection = game:GetService("UserInputService").InputBegan:Connect(function(input)
-                if input.KeyCode == Enum.KeyCode.Space then
-                    bodyVelocity.Velocity = Vector3.new(0, 50, 0)
-                elseif input.KeyCode == Enum.KeyCode.LeftShift then
-                    bodyVelocity.Velocity = Vector3.new(0, -50, 0)
-                end
-            end)
-        else
-            if FlyConnection then
-                FlyConnection:Disconnect()
-            end
-            if player.Character then
-                local humanoid = player.Character:FindFirstChild("Humanoid")
-                if humanoid then
-                    humanoid.PlatformStand = false
-                end
-                local bodyGyro = player.Character.HumanoidRootPart:FindFirstChild("BodyGyro")
-                local bodyVelocity = player.Character.HumanoidRootPart:FindFirstChild("BodyVelocity")
-                if bodyGyro then bodyGyro:Destroy() end
-                if bodyVelocity then bodyVelocity:Destroy() end
-            end
-        end
-    end
-
-    local function InfiniteJumpFunc(toggle)
-        InfiniteJump = toggle
-        if toggle then
-            game:GetService("UserInputService").JumpRequest:Connect(function()
-                if InfiniteJump and game.Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
-                    game.Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid"):ChangeState("Jumping")
-                end
-            end)
-        end
-    end
-
-    local function SpeedHackFunc(toggle)
-        SpeedHack = toggle
-        if toggle then
-            spawn(function()
-                while SpeedHack and game.Players.LocalPlayer.Character do
-                    wait()
-                    local humanoid = game.Players.LocalPlayer.Character:FindFirstChild("Humanoid")
-                    if humanoid then
-                        humanoid.WalkSpeed = SpeedValue
-                    end
-                end
-            end)
-        else
-            if game.Players.LocalPlayer.Character then
-                local humanoid = game.Players.LocalPlayer.Character:FindFirstChild("Humanoid")
-                if humanoid then
-                    humanoid.WalkSpeed = 16
-                end
-            end
-        end
-    end
-
-    local function JumpHackFunc(toggle)
-        JumpHack = toggle
-        if toggle then
-            spawn(function()
-                while JumpHack and game.Players.LocalPlayer.Character do
-                    wait()
-                    local humanoid = game.Players.LocalPlayer.Character:FindFirstChild("Humanoid")
-                    if humanoid then
-                        humanoid.JumpPower = JumpValue
-                    end
-                end
-            end)
-        else
-            if game.Players.LocalPlayer.Character then
-                local humanoid = game.Players.LocalPlayer.Character:FindFirstChild("Humanoid")
-                if humanoid then
-                    humanoid.JumpPower = 50
-                end
-            end
-        end
-    end
-
-    local function AntiAFKFunc(toggle)
-        if toggle then
-            local VirtualUser = game:GetService("VirtualUser")
-            game:GetService("Players").LocalPlayer.Idled:connect(function()
-                VirtualUser:CaptureController()
-                VirtualUser:ClickButton2(Vector2.new())
-            end)
-        end
-    end
-
-    -- Остальные функции (заглушки)
-    local function AntiRagdollFunc(toggle) end
-    local function TpToPlayer() print("TP to Player clicked") end
-    local function TpPlayersBase() print("TP Players Base clicked") end
-    local function AutoFarmFunc(toggle) end
-    local function AutoStealFunc(toggle) end
-    local function InvisibleFunc(toggle) end
-    local function InvisibleSwapFunc(toggle) end
-    local function AutoStealBrainrotFunc(toggle) end
-    local function GlideFunc(toggle) end
-    local function AutoSaveBaseFunc(toggle) end
-    local function AutoBuyFunc(toggle) end
-    local function DupeDrainrotFunc(toggle) end
 
     -- Создание кнопок разделов
     local function CreateSectionButton(name, position)
