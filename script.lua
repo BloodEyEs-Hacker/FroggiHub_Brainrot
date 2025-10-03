@@ -10,45 +10,95 @@ local function LoadingAnimation()
     screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     screenGui.Parent = game.CoreGui
 
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(1, 0, 1, 0)
-    frame.BackgroundColor3 = Color3.new(0.1, 0.1, 0.1)
-    frame.BorderSizePixel = 0
-    frame.Parent = screenGui
+    -- Фон с размытием
+    local background = Instance.new("Frame")
+    background.Size = UDim2.new(1, 0, 1, 0)
+    background.BackgroundColor3 = Color3.new(0, 0, 0)
+    background.BackgroundTransparency = 0.7
+    background.BorderSizePixel = 0
+    background.Parent = screenGui
 
-    local gradient = Instance.new("UIGradient")
-    gradient.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, Color3.new(0, 0.2, 0.4)),
-        ColorSequenceKeypoint.new(1, Color3.new(0, 0.4, 0.8))
-    })
-    gradient.Rotation = 45
-    gradient.Parent = frame
+    local blurEffect = Instance.new("BlurEffect")
+    blurEffect.Size = 10
+    blurEffect.Parent = screenGui
 
-    local title = Instance.new("TextLabel")
-    title.Size = UDim2.new(0, 400, 0, 80)
-    title.Position = UDim2.new(0.5, -200, 0.5, -40)
-    title.BackgroundTransparency = 1
-    title.Text = "FroggiHub"
-    title.TextColor3 = Color3.new(1, 1, 1)
-    title.TextScaled = true
-    title.Font = Enum.Font.GothamBlack
-    title.TextStrokeTransparency = 0
-    title.TextStrokeColor3 = Color3.new(0, 0.3, 0.6)
-    title.Parent = frame
+    -- Основной контейнер
+    local container = Instance.new("Frame")
+    container.Size = UDim2.new(0, 400, 0, 200)
+    container.Position = UDim2.new(0.5, -200, 0.5, -100)
+    container.BackgroundColor3 = Color3.new(0.1, 0.1, 0.1)
+    container.BackgroundTransparency = 0.2
+    container.BorderSizePixel = 0
+    container.Parent = screenGui
 
-    -- Анимация
-    for i = 1, 50 do
-        title.TextTransparency = i / 100
-        title.TextStrokeTransparency = i / 100
-        wait(0.02)
-    end
-    
-    wait(0.5)
-    screenGui:Destroy()
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 12)
+    corner.Parent = container
+
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = Color3.new(0, 0.4, 0.8)
+    stroke.Thickness = 3
+    stroke.Parent = container
+
+    -- Анимированный заголовок
+    local titleText = "FroggiHub"
+    local titleLabel = Instance.new("TextLabel")
+    titleLabel.Size = UDim2.new(1, 0, 0, 60)
+    titleLabel.Position = UDim2.new(0, 0, 0.3, 0)
+    titleLabel.BackgroundTransparency = 1
+    titleLabel.Text = ""
+    titleLabel.TextColor3 = Color3.new(1, 1, 1)
+    titleLabel.TextSize = 28
+    titleLabel.Font = Enum.Font.GothamBlack
+    titleLabel.TextStrokeTransparency = 0.5
+    titleLabel.TextStrokeColor3 = Color3.new(0, 0.3, 0.6)
+    titleLabel.Parent = container
+
+    -- Подзаголовок
+    local subtitle = Instance.new("TextLabel")
+    subtitle.Size = UDim2.new(1, 0, 0, 30)
+    subtitle.Position = UDim2.new(0, 0, 0.6, 0)
+    subtitle.BackgroundTransparency = 1
+    subtitle.Text = "Steal a Brainrot"
+    subtitle.TextColor3 = Color3.new(0.7, 0.7, 0.7)
+    subtitle.TextSize = 16
+    subtitle.Font = Enum.Font.Gotham
+    subtitle.TextTransparency = 1
+    subtitle.Parent = container
+
+    -- Анимация появления букв
+    spawn(function()
+        for i = 1, #titleText do
+            titleLabel.Text = string.sub(titleText, 1, i)
+            wait(0.1)
+        end
+        
+        -- Появление подзаголовка
+        for i = 0, 1, 0.1 do
+            subtitle.TextTransparency = 1 - i
+            wait(0.03)
+        end
+        
+        wait(1)
+        
+        -- Исчезновение
+        for i = 0, 1, 0.05 do
+            container.BackgroundTransparency = 0.2 + i * 0.8
+            titleLabel.TextTransparency = i
+            subtitle.TextTransparency = i
+            stroke.Transparency = i
+            wait(0.03)
+        end
+        
+        screenGui:Destroy()
+    end)
+
+    return screenGui
 end
 
 -- Запуск анимации
 spawn(LoadingAnimation)
+wait(2)
 
 -- Основной GUI
 local function CreateGUI()
@@ -64,7 +114,7 @@ local function CreateGUI()
     MainFrame.Parent = ScreenGui
 
     local Corner = Instance.new("UICorner")
-    Corner.CornerRadius = UDim.new(0, 8)
+    Corner.CornerRadius = UDim.new(0, 12)
     Corner.Parent = MainFrame
 
     local Stroke = Instance.new("UIStroke")
@@ -72,20 +122,49 @@ local function CreateGUI()
     Stroke.Thickness = 2
     Stroke.Parent = MainFrame
 
-    -- Заголовок
+    -- Заголовок для перемещения
     local Title = Instance.new("TextLabel")
     Title.Size = UDim2.new(1, 0, 0, 40)
     Title.Position = UDim2.new(0, 0, 0, 0)
     Title.BackgroundColor3 = Color3.new(0.1, 0.1, 0.1)
     Title.Text = "FroggiHub - Steal a Brainrot"
     Title.TextColor3 = Color3.new(1, 1, 1)
-    Title.TextSize = 18
+    Title.TextSize = 16
     Title.Font = Enum.Font.GothamBold
     Title.Parent = MainFrame
 
     local TitleCorner = Instance.new("UICorner")
-    TitleCorner.CornerRadius = UDim.new(0, 8)
+    TitleCorner.CornerRadius = UDim.new(0, 12)
     TitleCorner.Parent = Title
+
+    -- Кнопки управления
+    local CloseButton = Instance.new("TextButton")
+    CloseButton.Size = UDim2.new(0, 30, 0, 30)
+    CloseButton.Position = UDim2.new(1, -35, 0, 5)
+    CloseButton.BackgroundColor3 = Color3.new(1, 0.3, 0.3)
+    CloseButton.Text = "X"
+    CloseButton.TextColor3 = Color3.new(1, 1, 1)
+    CloseButton.TextSize = 14
+    CloseButton.Font = Enum.Font.GothamBold
+    CloseButton.Parent = Title
+
+    local CloseCorner = Instance.new("UICorner")
+    CloseCorner.CornerRadius = UDim.new(0, 6)
+    CloseCorner.Parent = CloseButton
+
+    local MinimizeButton = Instance.new("TextButton")
+    MinimizeButton.Size = UDim2.new(0, 30, 0, 30)
+    MinimizeButton.Position = UDim2.new(1, -70, 0, 5)
+    MinimizeButton.BackgroundColor3 = Color3.new(0.3, 0.3, 0.3)
+    MinimizeButton.Text = "_"
+    MinimizeButton.TextColor3 = Color3.new(1, 1, 1)
+    MinimizeButton.TextSize = 14
+    MinimizeButton.Font = Enum.Font.GothamBold
+    MinimizeButton.Parent = Title
+
+    local MinimizeCorner = Instance.new("UICorner")
+    MinimizeCorner.CornerRadius = UDim.new(0, 6)
+    MinimizeCorner.Parent = MinimizeButton
 
     -- Боковая панель
     local SidePanel = Instance.new("Frame")
@@ -96,7 +175,7 @@ local function CreateGUI()
     SidePanel.Parent = MainFrame
 
     local SideCorner = Instance.new("UICorner")
-    SideCorner.CornerRadius = UDim.new(0, 8)
+    SideCorner.CornerRadius = UDim.new(0, 12)
     SideCorner.Parent = SidePanel
 
     -- Контент панель
@@ -105,15 +184,61 @@ local function CreateGUI()
     ContentPanel.Position = UDim2.new(0, 150, 0, 40)
     ContentPanel.BackgroundColor3 = Color3.new(0.18, 0.18, 0.18)
     ContentPanel.BorderSizePixel = 0
+    ContentPanel.ClipsDescendants = true
     ContentPanel.Parent = MainFrame
 
     local ContentCorner = Instance.new("UICorner")
-    ContentCorner.CornerRadius = UDim.new(0, 8)
+    ContentCorner.CornerRadius = UDim.new(0, 12)
     ContentCorner.Parent = ContentPanel
+
+    -- Переменные для управления
+    local CurrentSection = "Main"
+    local isMinimized = false
+    local isDragging = false
+    local dragStart, frameStart
+
+    -- Функция перемещения
+    Title.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            isDragging = true
+            dragStart = input.Position
+            frameStart = MainFrame.Position
+        end
+    end)
+
+    Title.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            isDragging = false
+        end
+    end)
+
+    game:GetService("UserInputService").InputChanged:Connect(function(input)
+        if isDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            local delta = input.Position - dragStart
+            MainFrame.Position = UDim2.new(frameStart.X.Scale, frameStart.X.Offset + delta.X, frameStart.Y.Scale, frameStart.Y.Offset + delta.Y)
+        end
+    end)
+
+    -- Кнопка закрытия
+    CloseButton.MouseButton1Click:Connect(function()
+        ScreenGui:Destroy()
+    end)
+
+    -- Кнопка сворачивания
+    MinimizeButton.MouseButton1Click:Connect(function()
+        isMinimized = not isMinimized
+        if isMinimized then
+            MainFrame.Size = UDim2.new(0, 600, 0, 40)
+            MinimizeButton.BackgroundColor3 = Color3.new(0.2, 0.7, 0.2)
+        else
+            MainFrame.Size = UDim2.new(0, 600, 0, 400)
+            MinimizeButton.BackgroundColor3 = Color3.new(0.3, 0.3, 0.3)
+        end
+    end)
 
     -- Кнопки разделов
     local Sections = {"Main", "Visual", "Brainrot", "Info"}
-    local CurrentSection = "Main"
+    local SectionButtons = {}
 
     local function CreateSectionButton(name, position)
         local Button = Instance.new("TextButton")
@@ -127,12 +252,23 @@ local function CreateGUI()
         Button.Parent = SidePanel
 
         local ButtonCorner = Instance.new("UICorner")
-        ButtonCorner.CornerRadius = UDim.new(0, 6)
+        ButtonCorner.CornerRadius = UDim.new(0, 8)
         ButtonCorner.Parent = Button
+
+        SectionButtons[name] = Button
 
         Button.MouseButton1Click:Connect(function()
             CurrentSection = name
             UpdateContent()
+            
+            -- Обновление цвета активной кнопки
+            for sectionName, btn in pairs(SectionButtons) do
+                if sectionName == name then
+                    btn.BackgroundColor3 = Color3.new(0, 0.5, 1)
+                else
+                    btn.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
+                end
+            end
         end)
 
         return Button
@@ -182,7 +318,9 @@ local function CreateGUI()
             else
                 ToggleButton.BackgroundColor3 = Color3.new(0.3, 0.3, 0.3)
             end
-            callback(isToggled)
+            if callback then
+                callback(isToggled)
+            end
         end)
 
         return ToggleFrame
@@ -238,7 +376,9 @@ local function CreateGUI()
             SliderFill.Size = UDim2.new(percent, 0, 1, 0)
             SliderButton.Position = UDim2.new(percent, -10, 0, 20)
             SliderLabel.Text = name .. ": " .. math.floor(value)
-            callback(value)
+            if callback then
+                callback(value)
+            end
         end
 
         updateValue(default)
@@ -257,9 +397,8 @@ local function CreateGUI()
 
         game:GetService("UserInputService").InputChanged:Connect(function(input)
             if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-                local pos = UDim2.new(0, math.clamp(input.Position.X - SliderTrack.AbsolutePosition.X, 0, SliderTrack.AbsoluteSize.X), 0, 20)
-                local percent = pos.X.Scale
-                local value = min + (max - min) * percent
+                local relativeX = (input.Position.X - SliderTrack.AbsolutePosition.X) / SliderTrack.AbsoluteSize.X
+                local value = min + (max - min) * math.clamp(relativeX, 0, 1)
                 updateValue(value)
             end
         end)
@@ -279,10 +418,14 @@ local function CreateGUI()
         Button.Parent = ContentPanel
 
         local ButtonCorner = Instance.new("UICorner")
-        ButtonCorner.CornerRadius = UDim.new(0, 6)
+        ButtonCorner.CornerRadius = UDim.new(0, 8)
         ButtonCorner.Parent = Button
 
-        Button.MouseButton1Click:Connect(callback)
+        Button.MouseButton1Click:Connect(function()
+            if callback then
+                callback()
+            end
+        end)
 
         return Button
     end
@@ -295,19 +438,18 @@ local function CreateGUI()
     local SpeedValue = 16
     local JumpHack = false
     local JumpValue = 50
+    local FlyConnection
 
-    -- Функции
+    -- Исправленные функции
     local function NoClipFunc(toggle)
         Noclip = toggle
         if toggle then
             spawn(function()
-                while Noclip do
+                while Noclip and game.Players.LocalPlayer.Character do
                     wait()
-                    if game.Players.LocalPlayer.Character then
-                        for _, part in pairs(game.Players.LocalPlayer.Character:GetDescendants()) do
-                            if part:IsA("BasePart") then
-                                part.CanCollide = false
-                            end
+                    for _, part in pairs(game.Players.LocalPlayer.Character:GetDescendants()) do
+                        if part:IsA("BasePart") then
+                            part.CanCollide = false
                         end
                     end
                 end
@@ -317,25 +459,46 @@ local function CreateGUI()
 
     local function FlyFunc(toggle)
         Flying = toggle
+        local player = game.Players.LocalPlayer
+        
         if toggle then
-            -- Код для полета
-            local player = game.Players.LocalPlayer
-            local character = player.CharacterAdded:Wait()
+            local character = player.Character or player.CharacterAdded:Wait()
             local humanoid = character:WaitForChild("Humanoid")
+            humanoid.PlatformStand = true
+            
+            local bodyGyro = Instance.new("BodyGyro")
+            bodyGyro.P = 1000
+            bodyGyro.D = 50
+            bodyGyro.MaxTorque = Vector3.new(10000, 10000, 10000)
+            bodyGyro.CFrame = character.HumanoidRootPart.CFrame
+            bodyGyro.Parent = character.HumanoidRootPart
             
             local bodyVelocity = Instance.new("BodyVelocity")
             bodyVelocity.Velocity = Vector3.new(0, 0, 0)
-            bodyVelocity.MaxForce = Vector3.new(0, 0, 0)
+            bodyVelocity.MaxForce = Vector3.new(10000, 10000, 10000)
             bodyVelocity.Parent = character.HumanoidRootPart
             
-            spawn(function()
-                while Flying do
-                    wait()
-                    bodyVelocity.Velocity = Vector3.new(0, 5, 0)
-                    bodyVelocity.MaxForce = Vector3.new(0, math.huge, 0)
+            FlyConnection = game:GetService("UserInputService").InputBegan:Connect(function(input)
+                if input.KeyCode == Enum.KeyCode.Space then
+                    bodyVelocity.Velocity = Vector3.new(0, 50, 0)
+                elseif input.KeyCode == Enum.KeyCode.LeftShift then
+                    bodyVelocity.Velocity = Vector3.new(0, -50, 0)
                 end
-                bodyVelocity:Destroy()
             end)
+        else
+            if FlyConnection then
+                FlyConnection:Disconnect()
+            end
+            if player.Character then
+                local humanoid = player.Character:FindFirstChild("Humanoid")
+                if humanoid then
+                    humanoid.PlatformStand = false
+                end
+                local bodyGyro = player.Character.HumanoidRootPart:FindFirstChild("BodyGyro")
+                local bodyVelocity = player.Character.HumanoidRootPart:FindFirstChild("BodyVelocity")
+                if bodyGyro then bodyGyro:Destroy() end
+                if bodyVelocity then bodyVelocity:Destroy() end
+            end
         end
     end
 
@@ -343,8 +506,8 @@ local function CreateGUI()
         InfiniteJump = toggle
         if toggle then
             game:GetService("UserInputService").JumpRequest:Connect(function()
-                if InfiniteJump then
-                    game:GetService("Players").LocalPlayer.Character:FindFirstChildOfClass("Humanoid"):ChangeState("Jumping")
+                if InfiniteJump and game.Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+                    game.Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid"):ChangeState("Jumping")
                 end
             end)
         end
@@ -354,16 +517,20 @@ local function CreateGUI()
         SpeedHack = toggle
         if toggle then
             spawn(function()
-                while SpeedHack do
+                while SpeedHack and game.Players.LocalPlayer.Character do
                     wait()
-                    if game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("Humanoid") then
-                        game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = SpeedValue
+                    local humanoid = game.Players.LocalPlayer.Character:FindFirstChild("Humanoid")
+                    if humanoid then
+                        humanoid.WalkSpeed = SpeedValue
                     end
                 end
             end)
         else
-            if game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("Humanoid") then
-                game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = 16
+            if game.Players.LocalPlayer.Character then
+                local humanoid = game.Players.LocalPlayer.Character:FindFirstChild("Humanoid")
+                if humanoid then
+                    humanoid.WalkSpeed = 16
+                end
             end
         end
     end
@@ -372,16 +539,20 @@ local function CreateGUI()
         JumpHack = toggle
         if toggle then
             spawn(function()
-                while JumpHack do
+                while JumpHack and game.Players.LocalPlayer.Character do
                     wait()
-                    if game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("Humanoid") then
-                        game.Players.LocalPlayer.Character.Humanoid.JumpPower = JumpValue
+                    local humanoid = game.Players.LocalPlayer.Character:FindFirstChild("Humanoid")
+                    if humanoid then
+                        humanoid.JumpPower = JumpValue
                     end
                 end
             end)
         else
-            if game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("Humanoid") then
-                game.Players.LocalPlayer.Character.Humanoid.JumpPower = 50
+            if game.Players.LocalPlayer.Character then
+                local humanoid = game.Players.LocalPlayer.Character:FindFirstChild("Humanoid")
+                if humanoid then
+                    humanoid.JumpPower = 50
+                end
             end
         end
     end
@@ -396,73 +567,19 @@ local function CreateGUI()
         end
     end
 
-    local function AntiRagdollFunc(toggle)
-        if toggle then
-            -- Код для анти-рагдолла
-        end
-    end
-
-    local function TpToPlayer()
-        -- Код для телепортации к игроку
-    end
-
-    local function TpPlayersBase()
-        -- Код для телепортации игроков на базу
-    end
-
-    local function AutoFarmFunc(toggle)
-        if toggle then
-            -- Код для авто-фарма
-        end
-    end
-
-    local function AutoStealFunc(toggle)
-        if toggle then
-            -- Код для авто-кражи
-        end
-    end
-
-    local function InvisibleFunc(toggle)
-        if toggle then
-            -- Код для невидимости
-        end
-    end
-
-    local function InvisibleSwapFunc(toggle)
-        if toggle then
-            -- Код для невидимой замены
-        end
-    end
-
-    local function AutoStealBrainrotFunc(toggle)
-        if toggle then
-            -- Код для авто-кражи Brainrot
-        end
-    end
-
-    local function GlideFunc(toggle)
-        if toggle then
-            -- Код для планирования
-        end
-    end
-
-    local function AutoSaveBaseFunc(toggle)
-        if toggle then
-            -- Код для авто-сохранения базы
-        end
-    end
-
-    local function AutoBuyFunc(toggle)
-        if toggle then
-            -- Код для авто-покупки
-        end
-    end
-
-    local function DupeDrainrotFunc(toggle)
-        if toggle then
-            -- Код для Dupe Drainrot
-        end
-    end
+    -- Остальные функции (заглушки)
+    local function AntiRagdollFunc(toggle) end
+    local function TpToPlayer() print("TP to Player clicked") end
+    local function TpPlayersBase() print("TP Players Base clicked") end
+    local function AutoFarmFunc(toggle) end
+    local function AutoStealFunc(toggle) end
+    local function InvisibleFunc(toggle) end
+    local function InvisibleSwapFunc(toggle) end
+    local function AutoStealBrainrotFunc(toggle) end
+    local function GlideFunc(toggle) end
+    local function AutoSaveBaseFunc(toggle) end
+    local function AutoBuyFunc(toggle) end
+    local function DupeDrainrotFunc(toggle) end
 
     -- Обновление контента
     local function UpdateContent()
@@ -516,7 +633,7 @@ local function CreateGUI()
             InfoText.BackgroundTransparency = 1
             InfoText.Text = [[FroggiHub - Steal a Brainrot
 
-Version: 1.0
+Version: 1.1
 Created for DeltaX Injector
 
 Features:
@@ -541,13 +658,13 @@ Thanks for using FroggiHub!]]
 
     -- Инициализация
     UpdateContent()
+    SectionButtons["Main"].BackgroundColor3 = Color3.new(0, 0.5, 1) -- Активная кнопка
     ScreenGui.Parent = game.CoreGui
 
     return ScreenGui
 end
 
 -- Запуск GUI
-wait(1)
 CreateGUI()
 
 print("FroggiHub - Steal a Brainrot loaded successfully!")
